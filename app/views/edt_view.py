@@ -189,35 +189,29 @@ class EdtView(ctk.CTkFrame):
         if canceled or teacher_absent:
             color = C["danger"]
 
-        time_str = f"{lesson.start.strftime('%H:%M')} – {lesson.end.strftime('%H:%M')}"
+        time_str = f"{lesson.start.strftime('%H:%M')}–{lesson.end.strftime('%H:%M')}"
         teacher = getattr(lesson, "teacher_name", "") or ""
         classroom = getattr(lesson, "classroom", "") or ""
         flag = " 🚫" if canceled else (" ⚠" if teacher_absent else "")
+        detail = "  ·  ".join(filter(None, [teacher, f"S.{classroom}" if classroom else ""]))
 
-        frame = ctk.CTkFrame(self._scroll, fg_color=C["card"], corner_radius=8)
+        frame = ctk.CTkFrame(self._scroll, fg_color=C["card"], corner_radius=6)
         frame.grid_columnconfigure(1, weight=1)
 
-        # Bande colorée gauche
         ctk.CTkFrame(frame, width=3, fg_color=color, corner_radius=2).grid(
-            row=0, column=0, rowspan=3, padx=(4, 8), pady=4, sticky="ns"
+            row=0, column=0, rowspan=3, padx=(3, 6), pady=2, sticky="ns"
         )
-
-        # L1 : Matière
         ctk.CTkLabel(frame, text=f"{name}{flag}",
-                     font=ctk.CTkFont(size=12, weight="bold"),
+                     font=ctk.CTkFont(size=11, weight="bold"),
                      text_color=C["danger"] if (canceled or teacher_absent) else C["text"],
-                     anchor="w").grid(row=0, column=1, padx=(0, 8), pady=(4, 0), sticky="w")
-        # L2 : Heure
+                     anchor="w").grid(row=0, column=1, pady=(2, 0), sticky="w")
         ctk.CTkLabel(frame, text=time_str,
                      font=ctk.CTkFont(size=10),
-                     text_color=C["subtext"], anchor="w").grid(row=1, column=1, padx=(0, 8), pady=0, sticky="w")
-        # L3 : Prof + salle
-        detail = "  ·  ".join(filter(None, [teacher, f"Salle {classroom}" if classroom else ""]))
+                     text_color=C["subtext"], anchor="w").grid(row=1, column=1, pady=0, sticky="w")
         if detail:
             ctk.CTkLabel(frame, text=detail,
                          font=ctk.CTkFont(size=10),
-                         text_color=C["subtext"], anchor="w").grid(row=2, column=1, padx=(0, 8), pady=(0, 4), sticky="w")
-
+                         text_color=C["subtext"], anchor="w").grid(row=2, column=1, pady=(0, 2), sticky="w")
         return frame
 
     def _clear_lessons(self) -> None:

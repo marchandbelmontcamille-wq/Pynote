@@ -166,27 +166,22 @@ class DevoirsView(ctk.CTkFrame):
         desc = getattr(hw, "description", "") or ""
         desc = desc.replace("<br />", " ").replace("<br>", " ").strip()
 
-        frame = ctk.CTkFrame(self._scroll, fg_color=C["card"], corner_radius=8)
+        frame = ctk.CTkFrame(self._scroll, fg_color=C["card"], corner_radius=6)
         frame.grid_columnconfigure(1, weight=1)
 
-        # Bande colorée gauche
         ctk.CTkFrame(frame, width=3, fg_color=color, corner_radius=2).grid(
-            row=0, column=0, rowspan=3, padx=(4, 8), pady=4, sticky="ns"
+            row=0, column=0, rowspan=2, padx=(3, 6), pady=2, sticky="ns"
         )
-
-        # L1 : Matière
         ctk.CTkLabel(frame, text=f"{icon}  {name}",
-                     font=ctk.CTkFont(size=12, weight="bold"),
+                     font=ctk.CTkFont(size=11, weight="bold"),
                      text_color=C["subtext"] if done else C["text"],
-                     anchor="w").grid(row=0, column=1, padx=(0, 8), pady=(4, 0), sticky="w")
-        # L2 : Description courte
+                     anchor="w").grid(row=0, column=1, pady=(2, 0), sticky="w")
         if desc:
             ctk.CTkLabel(frame, text=desc[:120] + ("…" if len(desc) > 120 else ""),
                          font=ctk.CTkFont(size=10),
                          text_color=C["subtext"], anchor="w",
                          wraplength=500, justify="left").grid(
-                row=1, column=1, padx=(0, 8), pady=(0, 4), sticky="w")
-
+                row=1, column=1, pady=(0, 2), sticky="w")
         return frame
 
     def _clear_cards(self) -> None:
