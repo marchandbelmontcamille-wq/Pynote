@@ -2,6 +2,10 @@
 *.json
 !.env.example
 
+# Exclure explicitement les fichiers de build PyInstaller (pas le .spec)
+build/
+dist/
+
 # Python
 __pycache__/
 *.py[cod]
