@@ -164,33 +164,26 @@ class DevoirsView(ctk.CTkFrame):
                 card.grid(row=row, column=0, sticky="ew", pady=1)
                 row += 1
 
-    def _make_hw_card(self, hw) -> ctk.CTkFrame:
+    def _make_hw_card(self, hw) -> ctk.CTkLabel:
         done = getattr(hw, "done", False)
         subject = getattr(hw, "subject", None)
         name = subject.name if subject else "Matière inconnue"
-        color = C["done"] if done else _subject_color(name)
 
         icon = "✅" if done else "📝"
         desc = getattr(hw, "description", "") or ""
         desc = desc.replace("<br />", " ").replace("<br>", " ").strip()
+        short_desc = f"  —  {desc[:80]}{'…' if len(desc) > 80 else ''}" if desc else ""
+        line = f"  {icon}  {name}{short_desc}"
 
-        frame = ctk.CTkFrame(self._scroll, fg_color=C["card"], corner_radius=6)
-        frame.grid_columnconfigure(1, weight=1)
-
-        ctk.CTkFrame(frame, width=3, fg_color=color, corner_radius=2).grid(
-            row=0, column=0, rowspan=2, padx=(3, 6), pady=2, sticky="ns"
+        return ctk.CTkLabel(
+            self._scroll,
+            text=line,
+            font=ctk.CTkFont(size=11),
+            text_color=C["subtext"] if done else C["text"],
+            fg_color=C["card"],
+            anchor="w",
+            corner_radius=4,
         )
-        ctk.CTkLabel(frame, text=f"{icon}  {name}",
-                     font=ctk.CTkFont(size=11, weight="bold"),
-                     text_color=C["subtext"] if done else C["text"],
-                     anchor="w").grid(row=0, column=1, pady=(2, 0), sticky="w")
-        if desc:
-            ctk.CTkLabel(frame, text=desc[:120] + ("…" if len(desc) > 120 else ""),
-                         font=ctk.CTkFont(size=10),
-                         text_color=C["subtext"], anchor="w",
-                         wraplength=500, justify="left").grid(
-                row=1, column=1, pady=(0, 2), sticky="w")
-        return frame
 
     def _clear_cards(self) -> None:
         for w in self._scroll.winfo_children():
