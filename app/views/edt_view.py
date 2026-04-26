@@ -180,7 +180,7 @@ class EdtView(ctk.CTkFrame):
                 card.grid(row=row, column=0, sticky="ew", pady=1)
                 row += 1
 
-    def _make_lesson_card(self, lesson) -> ctk.CTkLabel:
+    def _make_lesson_card(self, lesson) -> ctk.CTkFrame:
         canceled = getattr(lesson, "canceled", False)
         teacher_absent = getattr(lesson, "teacher_absent", False)
         subject = getattr(lesson, "subject", None)
@@ -189,23 +189,36 @@ class EdtView(ctk.CTkFrame):
         if canceled or teacher_absent:
             color = C["danger"]
 
-        time_str = f"{lesson.start.strftime('%H:%M')}–{lesson.end.strftime('%H:%M')}"
+        time_str = f"{lesson.start.strftime('%H:%M')} – {lesson.end.strftime('%H:%M')}"
         teacher = getattr(lesson, "teacher_name", "") or ""
         classroom = getattr(lesson, "classroom", "") or ""
         flag = " 🚫" if canceled else (" ⚠" if teacher_absent else "")
-        sub = " · ".join(filter(None, [teacher, f"S.{classroom}" if classroom else ""]))
-        line = f"  │  {name}{flag}   {time_str}" + (f"   {sub}" if sub else "")
 
-        return ctk.CTkLabel(
-            self._scroll,
-            text=line,
-            font=ctk.CTkFont(size=11),
-            text_color=C["danger"] if (canceled or teacher_absent) else C["text"],
-            fg_color=C["card"],
-            anchor="w",
-            corner_radius=6,
-            height=24,
+        frame = ctk.CTkFrame(self._scroll, fg_color=C["card"], corner_radius=8)
+        frame.grid_columnconfigure(1, weight=1)
+
+        # Bande colorée gauche
+        ctk.CTkFrame(frame, width=3, fg_color=color, corner_radius=2).grid(
+            row=0, column=0, rowspan=3, padx=(4, 8), pady=4, sticky="ns"
         )
+
+        # L1 : Matière
+        ctk.CTkLabel(frame, text=f"{name}{flag}",
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color=C["danger"] if (canceled or teacher_absent) else C["text"],
+                     anchor="w").grid(row=0, column=1, padx=(0, 8), pady=(4, 0), sticky="w")
+        # L2 : Heure
+        ctk.CTkLabel(frame, text=time_str,
+                     font=ctk.CTkFont(size=10),
+                     text_color=C["subtext"], anchor="w").grid(row=1, column=1, padx=(0, 8), pady=0, sticky="w")
+        # L3 : Prof + salle
+        detail = "  ·  ".join(filter(None, [teacher, f"Salle {classroom}" if classroom else ""]))
+        if detail:
+            ctk.CTkLabel(frame, text=detail,
+                         font=ctk.CTkFont(size=10),
+                         text_color=C["subtext"], anchor="w").grid(row=2, column=1, padx=(0, 8), pady=(0, 4), sticky="w")
+
+        return frame
 
     def _clear_lessons(self) -> None:
         for w in self._scroll.winfo_children():
