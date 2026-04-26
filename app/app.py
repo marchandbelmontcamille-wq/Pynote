@@ -93,8 +93,8 @@ class PynoteApp(ctk.CTk):
             v.grid(row=0, column=0, sticky="nsew")
 
         self._switch_view("edt")
-        # Les devoirs se chargent uniquement sur demande (bouton Actualiser)
-        # pour éviter les deux requêtes simultanées au démarrage
+        # Charger les devoirs après un court délai pour ne pas surcharger
+        self.after(2000, devoirs_view.refresh)
 
     def _build_sidebar(self) -> ctk.CTkFrame:
         sb = ctk.CTkFrame(self, width=220, corner_radius=0, fg_color=C["sidebar"])
