@@ -32,18 +32,26 @@ jobs:
           if ($tag -like "v*") {
             "prod" | Out-File -FilePath build_type.txt -Encoding utf8
             "IS_PRE=false" | Add-Content $env:GITHUB_ENV
-            "ZIP=Pynote-windows.zip" | Add-Content $env:GITHUB_ENV
+            "INSTALLER=Pynote-Setup-$tag.exe" | Add-Content $env:GITHUB_ENV
           } else {
             "dev" | Out-File -FilePath build_type.txt -Encoding utf8
             "IS_PRE=true" | Add-Content $env:GITHUB_ENV
-            "ZIP=Pynote-dev-windows.zip" | Add-Content $env:GITHUB_ENV
+            "INSTALLER=Pynote-Dev-Setup-$tag.exe" | Add-Content $env:GITHUB_ENV
           }
 
       - name: Build EXE
         run: pyinstaller pynote.spec --noconfirm
 
-      - name: Package
-        run: Compress-Archive -Path dist\Pynote\* -DestinationPath ${{ env.ZIP }}
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup --yes --no-progress
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          & $iscc /O"installer_output" /F"${{ env.INSTALLER }}" installer\pynote.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
 
       - name: Cleanup old releases and drafts
         env:
@@ -51,11 +59,10 @@ jobs:
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}"
-          # Supprimer toutes les releases (publiées + drafts) liées à ce tag
           $releases = gh api "repos/${{ github.repository }}/releases" --paginate | ConvertFrom-Json
           foreach ($r in $releases) {
             if ($r.tag_name -eq $tag) {
-              Write-Host "Deleting release $($r.id) ($($r.tag_name))..."
+              Write-Host "Deleting release $($r.id)..."
               gh api -X DELETE "repos/${{ github.repository }}/releases/$($r.id)"
             }
           }
@@ -66,7 +73,7 @@ jobs:
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}"
-          $zip = "${{ env.ZIP }}"
+          $installer = "installer_output\${{ env.INSTALLER }}"
           $pre = if ("${{ env.IS_PRE }}" -eq "true") { "--prerelease" } else { "" }
-          $body = "## Pynote $tag`n`n### Installation (Windows)`n1. Telechargez **$zip**`n2. Extrayez le dossier`n3. Double-cliquez sur **Pynote.exe**`n4. Saisissez l URL Pronote + vos identifiants`n`n> Aucune installation de Python requise."
-          gh release create $tag $zip --title "Pynote $tag" --notes $body $pre
+          $body = "## Pynote $tag`n`n### Installation (Windows)`n1. Telechargez **${{ env.INSTALLER }}**`n2. Double-cliquez et suivez le wizard`n3. Lancez Pynote depuis le Bureau ou le Menu Demarrer`n`n> Aucune installation de Python requise."
+          gh release create $tag $installer --title "Pynote $tag" --notes $body $pre
