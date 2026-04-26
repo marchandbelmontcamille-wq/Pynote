@@ -45,30 +45,28 @@ jobs:
       - name: Package
         run: Compress-Archive -Path dist\Pynote\* -DestinationPath ${{ env.ZIP }}
 
-      - name: Delete existing release if any
+      - name: Cleanup old releases and drafts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}"
-          $release = gh release view $tag --json id 2>$null | ConvertFrom-Json
-          if ($release) {
-            Write-Host "Deleting existing release for tag $tag..."
-            gh release delete $tag --yes 2>$null
+          # Supprimer toutes les releases (publiées + drafts) liées à ce tag
+          $releases = gh api "repos/${{ github.repository }}/releases" --paginate | ConvertFrom-Json
+          foreach ($r in $releases) {
+            if ($r.tag_name -eq $tag) {
+              Write-Host "Deleting release $($r.id) ($($r.tag_name))..."
+              gh api -X DELETE "repos/${{ github.repository }}/releases/$($r.id)"
+            }
           }
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          prerelease: ${{ env.IS_PRE }}
-          files: ${{ env.ZIP }}
-          body: |
-            ## 🎓 Pynote ${{ github.ref_name }}
-
-            ### Installation (Windows)
-            1. Téléchargez **${{ env.ZIP }}**
-            2. Extrayez le dossier
-            3. Double-cliquez sur **Pynote.exe**
-            4. Saisissez l'URL Pronote + vos identifiants
-
-            > Aucune installation de Python requise.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $zip = "${{ env.ZIP }}"
+          $pre = if ("${{ env.IS_PRE }}" -eq "true") { "--prerelease" } else { "" }
+          $body = "## Pynote $tag`n`n### Installation (Windows)`n1. Telechargez **$zip**`n2. Extrayez le dossier`n3. Double-cliquez sur **Pynote.exe**`n4. Saisissez l URL Pronote + vos identifiants`n`n> Aucune installation de Python requise."
+          gh release create $tag $zip --title "Pynote $tag" --notes $body $pre
