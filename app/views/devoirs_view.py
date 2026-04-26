@@ -53,7 +53,7 @@ class DevoirsView(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
         self._build_ui()
-        self.refresh()
+        # refresh() appelé depuis app.py avec délai pour éviter le rate-limit
 
     def _build_ui(self) -> None:
         # ── Barre supérieure ──

@@ -82,14 +82,20 @@ class PynoteApp(ctk.CTk):
         content.grid_columnconfigure(0, weight=1)
         content.grid_rowconfigure(0, weight=1)
 
+        edt_view     = EdtView(content, self._service)
+        devoirs_view = DevoirsView(content, self._service)
+
         self._views: dict[str, ctk.CTkFrame] = {
-            "edt":     EdtView(content, self._service),
-            "devoirs": DevoirsView(content, self._service),
+            "edt":     edt_view,
+            "devoirs": devoirs_view,
         }
         for v in self._views.values():
             v.grid(row=0, column=0, sticky="nsew")
 
         self._switch_view("edt")
+
+        # Retarder le chargement des devoirs pour éviter le rate-limit
+        self.after(4000, devoirs_view.refresh)
 
     def _build_sidebar(self) -> ctk.CTkFrame:
         sb = ctk.CTkFrame(self, width=220, corner_radius=0, fg_color=C["sidebar"])
