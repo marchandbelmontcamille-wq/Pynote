@@ -30,11 +30,11 @@ jobs:
         run: |
           $tag = "${{ github.ref_name }}"
           if ($tag -like "v*") {
-            "APP_ENV=prod" | Out-File -FilePath build_type.txt -Encoding utf8
+            "prod" | Out-File -FilePath build_type.txt -Encoding utf8
             "IS_PRE=false" | Add-Content $env:GITHUB_ENV
             "ZIP=Pynote-windows.zip" | Add-Content $env:GITHUB_ENV
           } else {
-            "APP_ENV=dev" | Out-File -FilePath build_type.txt -Encoding utf8
+            "dev" | Out-File -FilePath build_type.txt -Encoding utf8
             "IS_PRE=true" | Add-Content $env:GITHUB_ENV
             "ZIP=Pynote-dev-windows.zip" | Add-Content $env:GITHUB_ENV
           }
