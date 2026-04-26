@@ -3,8 +3,8 @@ name: Build & Release Pynote
 on:
   push:
     tags:
-      - "v*"        # Release stable — ex: v1.0.0
-      - "0.*"       # Pre-release — ex: 0.1.0
+      - "v*"
+      - "0.*"
 
 permissions:
   contents: write
@@ -45,7 +45,19 @@ jobs:
       - name: Package
         run: Compress-Archive -Path dist\Pynote\* -DestinationPath ${{ env.ZIP }}
 
-      - name: Release
+      - name: Delete existing release if any
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $release = gh release view $tag --json id 2>$null | ConvertFrom-Json
+          if ($release) {
+            Write-Host "Deleting existing release for tag $tag..."
+            gh release delete $tag --yes 2>$null
+          }
+
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           prerelease: ${{ env.IS_PRE }}
@@ -57,6 +69,6 @@ jobs:
             1. Téléchargez **${{ env.ZIP }}**
             2. Extrayez le dossier
             3. Double-cliquez sur **Pynote.exe**
-            4. Saisissez l'URL Pronote de votre établissement + vos identifiants
+            4. Saisissez l'URL Pronote + vos identifiants
 
             > Aucune installation de Python requise.
