@@ -26,6 +26,17 @@ if not APP_ENV:
 
 IS_DEV: bool = APP_ENV == "dev"
 
+# Numéro de version
+def _read_version() -> str:
+    import sys
+    _base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    for p in [os.path.join(_base, "VERSION"), os.path.join(os.path.dirname(__file__), "VERSION")]:
+        if os.path.exists(p):
+            return open(p).read().strip()
+    return "0.0.0"
+
+APP_VERSION: str = _read_version()
+
 # Logging
 LOG_LEVEL = logging.DEBUG if IS_DEV else logging.WARNING
 logging.basicConfig(

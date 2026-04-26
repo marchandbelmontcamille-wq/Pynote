@@ -119,9 +119,10 @@ class PynoteApp(ctk.CTk):
             font=ctk.CTkFont(size=18, weight="bold"),
             text_color=C["text"],
         ).grid(row=0, column=0, sticky="w")
+        version_label = f"DEV {config.APP_VERSION}" if config.IS_DEV else f"v{config.APP_VERSION}"
         ctk.CTkLabel(
             title_col,
-            text="DEV" if config.IS_DEV else "v1.0",
+            text=version_label,
             font=ctk.CTkFont(size=10, weight="bold"),
             text_color=C["warning"] if config.IS_DEV else C["success"],
         ).grid(row=1, column=0, sticky="w")

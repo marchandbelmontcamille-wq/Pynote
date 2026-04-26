@@ -9,10 +9,12 @@ from pathlib import Path
 
 block_cipher = None
 
-# Inclure build_type.txt s'il existe (injecté par CI pour indiquer dev/prod)
+# Inclure build_type.txt et VERSION dans le bundle
 _datas = []
 if os.path.exists("build_type.txt"):
-    _datas = [("build_type.txt", ".")]
+    _datas.append(("build_type.txt", "."))
+if os.path.exists("VERSION"):
+    _datas.append(("VERSION", "."))
 
 a = Analysis(
     ["main.py"],
