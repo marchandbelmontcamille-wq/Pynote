@@ -51,8 +51,11 @@ jobs:
         run: |
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
           $version = (Get-Content VERSION).Trim()
-          & $iscc /O"installer_output" /F"${{ env.INSTALLER }}" "/DMyAppVersion=$version" installer\pynote.iss
+          $basename = "${{ env.INSTALLER }}" -replace '\.exe$', ''
+          & $iscc /O"installer_output" /F"$basename" "/DMyAppVersion=$version" installer\pynote.iss
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
+          Write-Host "Files in installer_output:"
+          Get-ChildItem installer_output
 
       - name: Cleanup old releases and drafts
         env:
