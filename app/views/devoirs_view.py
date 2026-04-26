@@ -11,6 +11,14 @@ import customtkinter as ctk
 import config
 from app.pronote_service import PronoteService
 
+JOURS_FR = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+MOIS_FR  = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+            "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+
+
+def _date_fr(d: date) -> str:
+    return f"{JOURS_FR[d.weekday()]} {d.day} {MOIS_FR[d.month]}"
+
 logger = logging.getLogger("pynote.devoirs")
 
 C = {
@@ -129,10 +137,10 @@ class DevoirsView(ctk.CTkFrame):
                 label = "Demain"
                 head_color = C["warning"]
             elif delta <= 3:
-                label = hw_date.strftime("%A %d %B").capitalize()
+                label = _date_fr(hw_date)
                 head_color = C["warning"]
             else:
-                label = hw_date.strftime("%A %d %B").capitalize()
+                label = _date_fr(hw_date)
                 head_color = C["day_head"]
 
             # En-tête de date
