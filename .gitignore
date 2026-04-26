@@ -1,3 +1,7 @@
+# Session Pronote (token persisté - NE JAMAIS COMMITER)
+*.json
+!.env.example
+
 # Python
 __pycache__/
 *.py[cod]
