@@ -14,33 +14,22 @@ Client de bureau léger pour consulter votre **emploi du temps** et vos **devoir
 
 ---
 
-## Prérequis
+## 🚀 Téléchargement (utilisateurs)
 
-- Python **3.11+**
-- pip
+> **Aucune installation de Python requise.**
+
+1. Rendez-vous sur la page [**Releases**](https://github.com/marchandbelmontcamille-wq/Pynote/releases/latest)
+2. Téléchargez **Pynote-windows.zip**
+3. Extrayez le dossier où vous voulez
+4. Double-cliquez sur **Pynote.exe**
+5. Entrez l'URL Pronote de votre établissement, votre identifiant et mot de passe
 
 ---
 
-## Installation
+## Prérequis (développeurs)
 
-### Mode Production (`main`)
-
-```bash
-# Cloner le dépôt
-git clone https://github.com/marchandbelmontcamille-wq/Pynote.git
-cd Pynote
-
-# Créer un environnement virtuel
-python -m venv .venv
-.venv\Scripts\activate  # Windows
-# source .venv/bin/activate  # Linux/macOS
-
-# Installer les dépendances prod
-pip install -r requirements.txt
-
-# Lancer
-python main.py
-```
+- Python **3.11+**
+- pip
 
 ### Mode Développement (`dev`)
 

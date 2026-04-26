@@ -1,0 +1,54 @@
+name: Build & Release Pynote
+
+on:
+  push:
+    tags:
+      - "v*.*.*"          # Déclenché par un tag ex: v1.0.0
+
+permissions:
+  contents: write         # Nécessaire pour créer une release GitHub
+
+jobs:
+  build-windows:
+    name: Build Windows EXE
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: pyinstaller pynote.spec --noconfirm
+
+      - name: Zip the output
+        run: |
+          Compress-Archive -Path dist\Pynote\* -DestinationPath Pynote-windows.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Pynote ${{ github.ref_name }}"
+          body: |
+            ## 🎓 Pynote ${{ github.ref_name }}
+
+            ### Installation (utilisateurs)
+            1. Téléchargez **Pynote-windows.zip**
+            2. Extrayez le dossier où vous voulez
+            3. Double-cliquez sur **Pynote.exe**
+            4. Entrez l'URL Pronote de votre établissement, votre identifiant et mot de passe
+
+            > Aucune installation de Python requise.
+          files: Pynote-windows.zip
+          draft: false
+          prerelease: false
