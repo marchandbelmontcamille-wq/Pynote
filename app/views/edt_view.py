@@ -70,6 +70,8 @@ class EdtView(ctk.CTkFrame):
         super().__init__(master, fg_color=BG, corner_radius=0)
         self._service = service
         self._current_monday = date.today() - timedelta(days=date.today().weekday())
+        self._lessons_cache: list = []
+        self._col_w = COL_W  # sera mis à jour selon la largeur disponible
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
         self._build_ui()
@@ -136,6 +138,9 @@ class EdtView(ctk.CTkFrame):
             width=total_w, height=total_h,
         )
 
+        # Redessiner lors du redimensionnement de la fenêtre
+        self._sf.bind("<Configure>", self._on_resize)
+
     # ------------------------------------------------------------------
     # Navigation
     # ------------------------------------------------------------------
@@ -156,6 +161,15 @@ class EdtView(ctk.CTkFrame):
     # Chargement
     # ------------------------------------------------------------------
 
+    def _on_resize(self, event) -> None:
+        """Recalcule la largeur des colonnes selon l'espace disponible."""
+        available = event.width - HOUR_W - 20  # 20px pour la scrollbar
+        nb_days = 5
+        new_col_w = max(100, (available - nb_days * COL_GAP) // nb_days)
+        if abs(new_col_w - self._col_w) > 4 and self._lessons_cache is not None:
+            self._col_w = new_col_w
+            self._render_grid(self._lessons_cache)
+
     def refresh(self) -> None:
         sunday = self._current_monday + timedelta(days=6)
         self._lbl_semaine.configure(
@@ -169,6 +183,7 @@ class EdtView(ctk.CTkFrame):
     def _load_thread(self) -> None:
         try:
             lessons = self._service.get_timetable(self._current_monday)
+            self._lessons_cache = lessons
             self.after(0, lambda: self._render_grid(lessons))
         except Exception as exc:
             msg = str(exc) if config.IS_DEV else "Impossible de charger l'emploi du temps."
@@ -188,7 +203,8 @@ class EdtView(ctk.CTkFrame):
             nb_days = max(5, max(l.start.weekday() for l in lessons) + 1)
             nb_days = min(nb_days, 6)
 
-        total_w = HOUR_W + nb_days * (COL_W + COL_GAP)
+        col_w = self._col_w
+        total_w = HOUR_W + nb_days * (col_w + COL_GAP)
         total_h = HEADER_H + (HOUR_END - HOUR_START) * HOUR_H
         c.configure(width=total_w, height=total_h)
         c.grid(row=0, column=0, sticky="nw")
@@ -200,8 +216,8 @@ class EdtView(ctk.CTkFrame):
 
         # ── Colonnes de fond ──
         for i in range(nb_days):
-            x0 = HOUR_W + i * (COL_W + COL_GAP)
-            x1 = x0 + COL_W
+            x0 = HOUR_W + i * (col_w + COL_GAP)
+            x1 = x0 + col_w
             day_date = self._current_monday + timedelta(days=i)
             col_bg = TODAY_COL if day_date == today else CARD_BG
             c.create_rectangle(x0, HEADER_H, x1, total_h, fill=col_bg, outline="")
@@ -209,14 +225,11 @@ class EdtView(ctk.CTkFrame):
         # ── Lignes horaires ──
         for h in range(HOUR_START, HOUR_END + 1):
             y = HEADER_H + (h - HOUR_START) * HOUR_H
-            # Ligne pleine
             c.create_line(HOUR_W, y, total_w, y, fill=GRID_LINE, width=1)
-            # Demi-heure (pointillé léger)
             y_half = y + HOUR_H // 2
             if h < HOUR_END:
                 c.create_line(HOUR_W, y_half, total_w, y_half,
                               fill=GRID_LINE, width=1, dash=(2, 6))
-            # Label heure
             c.create_text(
                 HOUR_W - 8, y + 4,
                 text=f"{h:02d}:00",
@@ -225,9 +238,9 @@ class EdtView(ctk.CTkFrame):
                 anchor="ne",
             )
 
-        # ── Lignes verticales entre colonnes ──
+        # ── Lignes verticales ──
         for i in range(nb_days + 1):
-            x = HOUR_W + i * (COL_W + COL_GAP)
+            x = HOUR_W + i * (col_w + COL_GAP)
             c.create_line(x, HEADER_H, x, total_h, fill=GRID_LINE, width=1)
 
         # ── En-têtes des jours ──
@@ -235,40 +248,36 @@ class EdtView(ctk.CTkFrame):
         c.create_line(0, HEADER_H, total_w, HEADER_H, fill=GRID_LINE, width=1)
 
         for i in range(nb_days):
-            x0 = HOUR_W + i * (COL_W + COL_GAP)
-            x1 = x0 + COL_W
+            x0 = HOUR_W + i * (col_w + COL_GAP)
+            x1 = x0 + col_w
             day_date = self._current_monday + timedelta(days=i)
             is_today = day_date == today
 
             if is_today:
-                # Pill bleu pour aujourd'hui
                 _round_rect(c, x0 + 12, 6, x1 - 12, HEADER_H - 6,
                             r=10, fill=ACCENT, outline="")
                 color = "#ffffff"
             else:
                 color = TEXT_SUB
 
-            jour = JOURS[i]
-            num  = day_date.strftime("%d")
-            cx   = (x0 + x1) // 2
-            c.create_text(cx, HEADER_H // 2 - 6, text=jour.upper()[:3],
+            cx = (x0 + x1) // 2
+            c.create_text(cx, HEADER_H // 2 - 6, text=JOURS[i].upper()[:3],
                           fill=color, font=("Segoe UI", 7, "bold"), anchor="center")
-            c.create_text(cx, HEADER_H // 2 + 6, text=num,
+            c.create_text(cx, HEADER_H // 2 + 6, text=day_date.strftime("%d"),
                           fill=color, font=("Segoe UI", 10, "bold"), anchor="center")
 
-        # ── Ligne de l'heure actuelle ──
+        # ── Ligne heure courante ──
         if self._current_monday <= today <= self._current_monday + timedelta(days=nb_days - 1):
             now = datetime.now()
             mins = (now.hour - HOUR_START) * 60 + now.minute
             if 0 <= mins <= (HOUR_END - HOUR_START) * 60:
                 y_now = HEADER_H + int(mins / 60 * HOUR_H)
                 wd = today.weekday()
-                x0 = HOUR_W + wd * (COL_W + COL_GAP)
-                x1 = x0 + COL_W
+                x0 = HOUR_W + wd * (col_w + COL_GAP)
+                x1 = x0 + col_w
                 c.create_oval(HOUR_W - 5, y_now - 4, HOUR_W + 5, y_now + 4,
                               fill=ACCENT, outline="")
-                c.create_line(HOUR_W, y_now, total_w, y_now,
-                              fill=ACCENT, width=2)
+                c.create_line(HOUR_W, y_now, total_w, y_now, fill=ACCENT, width=2)
 
         # ── Cours ──
         if not lessons:
@@ -278,9 +287,9 @@ class EdtView(ctk.CTkFrame):
                 fill=TEXT_SUB, font=("Segoe UI", 12), anchor="center",
             )
         else:
-            self._draw_lessons(c, lessons)
+            self._draw_lessons(c, lessons, col_w)
 
-    def _draw_lessons(self, c: tk.Canvas, lessons: list) -> None:
+    def _draw_lessons(self, c: tk.Canvas, lessons: list, col_w: int) -> None:
         total_mins = (HOUR_END - HOUR_START) * 60
 
         for lesson in lessons:
@@ -295,8 +304,8 @@ class EdtView(ctk.CTkFrame):
             if e_min <= s_min:
                 continue
 
-            x0 = HOUR_W + wd * (COL_W + COL_GAP) + 3
-            x1 = x0 + COL_W - 6
+            x0 = HOUR_W + wd * (col_w + COL_GAP) + 3
+            x1 = x0 + col_w - 6
             y0 = HEADER_H + int(s_min / 60 * HOUR_H) + 2
             y1 = HEADER_H + int(e_min / 60 * HOUR_H) - 2
             h  = y1 - y0
@@ -311,13 +320,9 @@ class EdtView(ctk.CTkFrame):
             else:
                 fg, bg = _subject_colors(name)
 
-            # Rectangle principal arrondi
             _round_rect(c, x0, y0, x1, y1, r=6, fill=bg, outline=fg, width=1)
-
-            # Barre colorée gauche
             _round_rect(c, x0, y0, x0 + 4, y1, r=3, fill=fg, outline="")
 
-            # Texte matière
             short = name if len(name) <= 16 else name[:14] + "…"
             if canceled:
                 short += " ✕"
@@ -325,47 +330,26 @@ class EdtView(ctk.CTkFrame):
                 short += " ⚠"
 
             text_x = x0 + 10
-            cx = (x0 + x1) // 2
 
-            c.create_text(
-                text_x, y0 + 10,
-                text=short,
-                fill=fg,
-                font=("Segoe UI", 8, "bold"),
-                anchor="w",
-            )
+            c.create_text(text_x, y0 + 10, text=short,
+                          fill="#ffffff", font=("Segoe UI", 8, "bold"), anchor="w")
 
             if h > 32:
                 time_str = f"{lesson.start.strftime('%H:%M')} – {lesson.end.strftime('%H:%M')}"
-                c.create_text(
-                    text_x, y0 + 22,
-                    text=time_str,
-                    fill=self._blend(fg, 0.6),
-                    font=("Segoe UI", 7),
-                    anchor="w",
-                )
+                c.create_text(text_x, y0 + 22, text=time_str,
+                              fill="#ffffff", font=("Segoe UI", 7), anchor="w")
 
             if h > 48:
                 teacher = getattr(lesson, "teacher_name", "") or ""
                 if teacher:
-                    c.create_text(
-                        text_x, y0 + 32,
-                        text=teacher,
-                        fill=self._blend(fg, 0.5),
-                        font=("Segoe UI", 7),
-                        anchor="w",
-                    )
+                    c.create_text(text_x, y0 + 32, text=teacher,
+                                  fill="#ffffff", font=("Segoe UI", 7), anchor="w")
 
             if h > 64:
                 classroom = getattr(lesson, "classroom", "") or ""
                 if classroom:
-                    c.create_text(
-                        text_x, y0 + 42,
-                        text=f"Salle {classroom}",
-                        fill=self._blend(fg, 0.45),
-                        font=("Segoe UI", 7),
-                        anchor="w",
-                    )
+                    c.create_text(text_x, y0 + 42, text=f"Salle {classroom}",
+                                  fill="#ffffff", font=("Segoe UI", 7), anchor="w")
 
     @staticmethod
     def _blend(hex_color: str, factor: float) -> str:
