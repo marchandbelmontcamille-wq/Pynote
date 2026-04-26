@@ -42,6 +42,47 @@ jobs:
       - name: Build EXE
         run: pyinstaller pynote.spec --noconfirm
 
+      - name: Sign EXE (certificat auto-signé)
+        shell: pwsh
+        run: |
+          # Générer un certificat de signature de code auto-signé
+          $cert = New-SelfSignedCertificate `
+            -Subject "CN=Pynote, O=marchandbelmontcamille-wq" `
+            -DnsName "pynote.local" `
+            -Type CodeSigningCert `
+            -CertStoreLocation "Cert:\CurrentUser\My" `
+            -NotAfter (Get-Date).AddYears(5) `
+            -HashAlgorithm SHA256
+
+          # Exporter en PFX
+          $pwd = ConvertTo-SecureString -String "pynote_tmp_sign" -Force -AsPlainText
+          Export-PfxCertificate -Cert $cert -FilePath ".\pynote_sign.pfx" -Password $pwd | Out-Null
+
+          # Trouver signtool.exe
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" |
+            Where-Object { $_.FullName -match "x64" } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+
+          if (-not $signtool) { throw "signtool.exe introuvable" }
+          Write-Host "signtool trouvé : $signtool"
+
+          # Signer l'exécutable principal
+          & $signtool sign `
+            /fd SHA256 `
+            /f ".\pynote_sign.pfx" `
+            /p "pynote_tmp_sign" `
+            /d "Pynote" `
+            /du "https://github.com/marchandbelmontcamille-wq/Pynote" `
+            /t "http://timestamp.digicert.com" `
+            "dist\Pynote\Pynote.exe"
+
+          if ($LASTEXITCODE -ne 0) { throw "Signature échouée" }
+          Write-Host "✅ Pynote.exe signé avec succès"
+
+          # Nettoyer le PFX temporaire
+          Remove-Item ".\pynote_sign.pfx" -Force
+
       - name: Install Inno Setup
         run: |
           choco install innosetup --yes --no-progress
