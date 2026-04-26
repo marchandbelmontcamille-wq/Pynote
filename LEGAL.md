@@ -76,4 +76,23 @@ Pour toute question relative à la vie privée ou aux données personnelles :
 
 ---
 
+## 6. Propriété intellectuelle & assistance IA
+
+Ce projet a été développé avec l'assistance d'un outil d'intelligence artificielle
+(Roo/Claude d'Anthropic). Conformément au droit français et aux conditions
+d'utilisation d'Anthropic :
+
+- **L'IA ne peut pas être titulaire de droits d'auteur** (elle n'a pas de
+  personnalité juridique — articles L111-1 et L113-1 du Code de la propriété
+  intellectuelle)
+- **Le code, l'architecture et les décisions de conception appartiennent à
+  l'auteur du projet** (`marchandbelmontcamille-wq`), qui a fourni les
+  spécifications, dirigé le développement et validé chaque composant
+- Les CGU d'Anthropic (https://www.anthropic.com/legal/usage-policy) stipulent
+  que les outputs générés appartiennent à l'utilisateur
+
+Ce projet est donc bien protégé par la licence MIT au nom de son auteur.
+
+---
+
 *Dernière mise à jour : Avril 2026*
