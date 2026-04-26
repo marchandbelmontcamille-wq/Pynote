@@ -1,10 +1,8 @@
 """
-Fenêtre principale de l'application Pynote.
-Gère la navigation entre la vue de connexion, l'EDT et les devoirs.
+Fenêtre principale de l'application Pynote — design refait.
 """
 
 import logging
-
 import customtkinter as ctk
 
 import config
@@ -15,52 +13,59 @@ from app.views.devoirs_view import DevoirsView
 
 logger = logging.getLogger("pynote.app")
 
-# Apparence globale
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
+# Palette de couleurs
+C = {
+    "bg":        "#0f1117",
+    "sidebar":   "#161b27",
+    "card":      "#1c2333",
+    "border":    "#2a3347",
+    "accent":    "#4f8ef7",
+    "accent2":   "#7c5cbf",
+    "text":      "#e8eaf0",
+    "subtext":   "#8892a4",
+    "success":   "#3dd68c",
+    "warning":   "#f5a623",
+    "danger":    "#e05252",
+    "nav_hover": "#1e2740",
+    "nav_active":"#1e2f55",
+}
+
 NAV_ITEMS = [
-    ("📅  Emploi du temps", "edt"),
-    ("📝  Devoirs", "devoirs"),
+    ("edt",     "📅",  "Emploi du temps"),
+    ("devoirs", "📝",  "Devoirs"),
 ]
 
 
 class PynoteApp(ctk.CTk):
-    """
-    Fenêtre racine de l'application.
-    Affiche d'abord LoginView, puis la navigation principale.
-    """
-
     def __init__(self) -> None:
         super().__init__()
-        self.title("Pynote" + (" [DEV]" if config.IS_DEV else ""))
-        self.geometry("900x620")
-        self.minsize(720, 500)
-
+        self.title("Pynote" + (" — DEV" if config.IS_DEV else ""))
+        self.geometry("1050x680")
+        self.minsize(800, 540)
+        self.configure(fg_color=C["bg"])
         self._service = PronoteService()
-        self._current_view: ctk.CTkFrame | None = None
-
         self._show_login()
 
     # ------------------------------------------------------------------
-    # Phase 1 : Connexion
+    # Connexion
     # ------------------------------------------------------------------
 
     def _show_login(self) -> None:
         self._clear_window()
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
-
-        login = LoginView(self, self._service, on_success=self._on_login_success)
-        login.grid(row=0, column=0)
-        logger.debug("LoginView affichée.")
+        LoginView(self, self._service, on_success=self._on_login_success).grid(
+            row=0, column=0, sticky="nsew"
+        )
 
     def _on_login_success(self) -> None:
-        logger.info("Connexion validée — affichage de la vue principale.")
         self._show_main()
 
     # ------------------------------------------------------------------
-    # Phase 2 : Interface principale
+    # Interface principale
     # ------------------------------------------------------------------
 
     def _show_main(self) -> None:
@@ -69,99 +74,114 @@ class PynoteApp(ctk.CTk):
         self.grid_rowconfigure(0, weight=1)
 
         # Sidebar
-        self._sidebar = self._build_sidebar()
-        self._sidebar.grid(row=0, column=0, sticky="nsew")
+        self._build_sidebar().grid(row=0, column=0, sticky="nsew")
 
         # Zone de contenu
-        self._content_frame = ctk.CTkFrame(self)
-        self._content_frame.grid(row=0, column=1, sticky="nsew", padx=8, pady=8)
-        self._content_frame.grid_columnconfigure(0, weight=1)
-        self._content_frame.grid_rowconfigure(0, weight=1)
+        content = ctk.CTkFrame(self, fg_color=C["bg"], corner_radius=0)
+        content.grid(row=0, column=1, sticky="nsew")
+        content.grid_columnconfigure(0, weight=1)
+        content.grid_rowconfigure(0, weight=1)
 
-        # Instancier les vues
         self._views: dict[str, ctk.CTkFrame] = {
-            "edt": EdtView(self._content_frame, self._service),
-            "devoirs": DevoirsView(self._content_frame, self._service),
+            "edt":     EdtView(content, self._service),
+            "devoirs": DevoirsView(content, self._service),
         }
-        for view in self._views.values():
-            view.grid(row=0, column=0, sticky="nsew")
+        for v in self._views.values():
+            v.grid(row=0, column=0, sticky="nsew")
 
-        # Afficher la première vue
         self._switch_view("edt")
 
     def _build_sidebar(self) -> ctk.CTkFrame:
-        sidebar = ctk.CTkFrame(self, width=200, corner_radius=0)
-        sidebar.grid_propagate(False)
-        sidebar.grid_rowconfigure(len(NAV_ITEMS) + 2, weight=1)
+        sb = ctk.CTkFrame(self, width=220, corner_radius=0, fg_color=C["sidebar"])
+        sb.grid_propagate(False)
+        sb.grid_rowconfigure(10, weight=1)
 
-        # Logo / titre
-        ctk.CTkLabel(
-            sidebar,
-            text="🎓 Pynote",
-            font=ctk.CTkFont(size=20, weight="bold"),
-        ).grid(row=0, column=0, padx=20, pady=(24, 4))
+        # Logo
+        logo_frame = ctk.CTkFrame(sb, fg_color="transparent")
+        logo_frame.grid(row=0, column=0, padx=20, pady=(28, 24), sticky="w")
 
-        env_label = "DEV" if config.IS_DEV else "PROD"
-        env_color = "#e67e22" if config.IS_DEV else "#2ecc71"
         ctk.CTkLabel(
-            sidebar,
-            text=env_label,
+            logo_frame,
+            text="🎓",
+            font=ctk.CTkFont(size=28),
+        ).grid(row=0, column=0, padx=(0, 8))
+
+        title_col = ctk.CTkFrame(logo_frame, fg_color="transparent")
+        title_col.grid(row=0, column=1)
+        ctk.CTkLabel(
+            title_col,
+            text="Pynote",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color=C["text"],
+        ).grid(row=0, column=0, sticky="w")
+        ctk.CTkLabel(
+            title_col,
+            text="DEV" if config.IS_DEV else "v1.0",
             font=ctk.CTkFont(size=10, weight="bold"),
-            text_color=env_color,
-        ).grid(row=1, column=0, padx=20, pady=(0, 16))
+            text_color=C["warning"] if config.IS_DEV else C["success"],
+        ).grid(row=1, column=0, sticky="w")
 
+        # Séparateur
+        ctk.CTkFrame(sb, height=1, fg_color=C["border"]).grid(
+            row=1, column=0, sticky="ew", padx=16, pady=(0, 12)
+        )
+
+        # Navigation
         self._nav_buttons: dict[str, ctk.CTkButton] = {}
-        for i, (label, key) in enumerate(NAV_ITEMS):
+        for i, (key, icon, label) in enumerate(NAV_ITEMS):
             btn = ctk.CTkButton(
-                sidebar,
-                text=label,
+                sb,
+                text=f"  {icon}   {label}",
                 anchor="w",
-                width=180,
-                height=40,
+                width=200,
+                height=44,
                 font=ctk.CTkFont(size=13),
                 fg_color="transparent",
-                hover_color=("gray75", "gray30"),
+                hover_color=C["nav_hover"],
+                text_color=C["subtext"],
+                corner_radius=8,
+                border_spacing=0,
                 command=lambda k=key: self._switch_view(k),
             )
-            btn.grid(row=i + 2, column=0, padx=10, pady=4)
+            btn.grid(row=i + 2, column=0, padx=10, pady=2)
             self._nav_buttons[key] = btn
 
-        # Bouton déconnexion en bas
+        # Séparateur bas
+        ctk.CTkFrame(sb, height=1, fg_color=C["border"]).grid(
+            row=10, column=0, sticky="ew", padx=16, pady=8
+        )
+
+        # Bouton déconnexion
         ctk.CTkButton(
-            sidebar,
-            text="⏏  Déconnexion",
+            sb,
+            text="  ⏏   Déconnexion",
             anchor="w",
-            width=180,
-            height=36,
+            width=200,
+            height=40,
             font=ctk.CTkFont(size=12),
             fg_color="transparent",
-            hover_color=("#c0392b", "#922b21"),
-            text_color=("gray40", "gray70"),
+            hover_color="#2a1a1a",
+            text_color=C["subtext"],
+            corner_radius=8,
             command=self._logout,
-        ).grid(row=len(NAV_ITEMS) + 3, column=0, padx=10, pady=(0, 20), sticky="s")
+        ).grid(row=11, column=0, padx=10, pady=(0, 20))
 
-        return sidebar
+        return sb
 
     def _switch_view(self, key: str) -> None:
         for k, btn in self._nav_buttons.items():
-            btn.configure(
-                fg_color=("gray75", "gray30") if k == key else "transparent"
-            )
+            if k == key:
+                btn.configure(fg_color=C["nav_active"], text_color=C["accent"])
+            else:
+                btn.configure(fg_color="transparent", text_color=C["subtext"])
         self._views[key].tkraise()
-        logger.debug("Vue active : %s", key)
 
     def _logout(self) -> None:
         self._service.disconnect()
-        logger.info("Déconnexion — retour à la vue de connexion.")
         self._show_login()
 
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-
     def _clear_window(self) -> None:
-        for widget in self.winfo_children():
-            widget.destroy()
-        # Réinitialiser la configuration de grille
-        self.grid_columnconfigure(0, weight=0)
-        self.grid_columnconfigure(1, weight=0)
+        for w in self.winfo_children():
+            w.destroy()
+        for i in range(3):
+            self.grid_columnconfigure(i, weight=0)

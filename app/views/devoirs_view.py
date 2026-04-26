@@ -1,11 +1,10 @@
 """
-Vue Devoirs.
-Affiche les devoirs à rendre dans les 14 prochains jours.
+Vue Devoirs — design refait.
 """
 
 import logging
 import threading
-from datetime import date, timedelta
+from datetime import date
 
 import customtkinter as ctk
 
@@ -14,172 +13,201 @@ from app.pronote_service import PronoteService
 
 logger = logging.getLogger("pynote.devoirs")
 
+C = {
+    "bg":       "#0f1117",
+    "card":     "#1c2333",
+    "card2":    "#202840",
+    "border":   "#2a3347",
+    "accent":   "#4f8ef7",
+    "text":     "#e8eaf0",
+    "subtext":  "#8892a4",
+    "success":  "#3dd68c",
+    "warning":  "#f5a623",
+    "danger":   "#e05252",
+    "done":     "#2a3347",
+    "day_head": "#161b27",
+}
+
+SUBJECT_COLORS = [
+    "#4f8ef7", "#7c5cbf", "#3dd68c", "#f5a623",
+    "#e05252", "#00bcd4", "#ff7043", "#ab47bc",
+]
+
+
+def _subject_color(name: str) -> str:
+    return SUBJECT_COLORS[hash(name) % len(SUBJECT_COLORS)]
+
 
 class DevoirsView(ctk.CTkFrame):
-    """
-    Affiche la liste des devoirs à venir.
-
-    :param master: Widget parent
-    :param service: Instance partagée de PronoteService
-    """
-
-    def __init__(self, master: ctk.CTk, service: PronoteService) -> None:
-        super().__init__(master)
+    def __init__(self, master, service: PronoteService) -> None:
+        super().__init__(master, fg_color=C["bg"], corner_radius=0)
         self._service = service
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
         self._build_ui()
         self.refresh()
 
-    # ------------------------------------------------------------------
-    # Construction de l'interface
-    # ------------------------------------------------------------------
-
     def _build_ui(self) -> None:
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
-
-        # Barre d'outils
-        toolbar = ctk.CTkFrame(self, fg_color="transparent")
-        toolbar.grid(row=0, column=0, padx=16, pady=(16, 8), sticky="ew")
-        toolbar.grid_columnconfigure(0, weight=1)
+        # ── Barre supérieure ──
+        topbar = ctk.CTkFrame(self, fg_color="transparent")
+        topbar.grid(row=0, column=0, padx=24, pady=(20, 12), sticky="ew")
+        topbar.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(
-            toolbar,
+            topbar,
             text="Devoirs à venir",
-            font=ctk.CTkFont(size=16, weight="bold"),
-            anchor="w",
+            font=ctk.CTkFont(size=20, weight="bold"),
+            text_color=C["text"],
         ).grid(row=0, column=0, sticky="w")
 
         ctk.CTkButton(
-            toolbar,
-            text="↻ Actualiser",
+            topbar,
+            text="↻  Actualiser",
             width=110,
+            height=36,
+            corner_radius=8,
+            fg_color=C["card"],
+            hover_color=C["card2"],
+            border_width=1,
+            border_color=C["border"],
+            font=ctk.CTkFont(size=12),
+            text_color=C["text"],
             command=self.refresh,
         ).grid(row=0, column=1)
 
-        # Zone défilante
-        self._scroll = ctk.CTkScrollableFrame(self)
-        self._scroll.grid(row=1, column=0, padx=16, pady=(0, 16), sticky="nsew")
+        # ── Zone défilante ──
+        self._scroll = ctk.CTkScrollableFrame(
+            self, fg_color="transparent",
+            scrollbar_button_color=C["border"],
+            scrollbar_button_hover_color=C["accent"],
+        )
+        self._scroll.grid(row=1, column=0, padx=24, pady=(0, 16), sticky="nsew")
         self._scroll.grid_columnconfigure(0, weight=1)
 
-        self._lbl_info = ctk.CTkLabel(self._scroll, text="Chargement…", text_color="gray")
-        self._lbl_info.grid(row=0, column=0, pady=20)
-
-    # ------------------------------------------------------------------
-    # Chargement des données
-    # ------------------------------------------------------------------
+        self._lbl_info = ctk.CTkLabel(
+            self._scroll, text="Chargement…",
+            font=ctk.CTkFont(size=14), text_color=C["subtext"],
+        )
+        self._lbl_info.grid(row=0, column=0, pady=40)
 
     def refresh(self) -> None:
-        """Recharge les devoirs."""
         self._clear_cards()
-        self._lbl_info.configure(text="Chargement…", text_color="gray")
-        self._lbl_info.grid(row=0, column=0, pady=20)
+        self._lbl_info.configure(text="Chargement…", text_color=C["subtext"])
+        self._lbl_info.grid(row=0, column=0, pady=40)
         threading.Thread(target=self._load_thread, daemon=True).start()
 
     def _load_thread(self) -> None:
         try:
-            homework_list = self._service.get_homework()
-            self.after(0, lambda: self._display_homework(homework_list))
+            hw_list = self._service.get_homework()
+            self.after(0, lambda: self._display_homework(hw_list))
         except Exception as exc:
-            msg = str(exc) if config.IS_DEV else "Erreur lors du chargement des devoirs."
-            self.after(0, lambda: self._show_error(msg))
+            msg = str(exc) if config.IS_DEV else "Impossible de charger les devoirs."
+            self.after(0, lambda: self._show_info(f"⚠  {msg}", error=True))
 
-    # ------------------------------------------------------------------
-    # Affichage
-    # ------------------------------------------------------------------
-
-    def _display_homework(self, homework_list: list) -> None:
+    def _display_homework(self, hw_list: list) -> None:
         self._lbl_info.grid_remove()
         self._clear_cards()
 
-        if not homework_list:
-            self._lbl_info.configure(text="🎉 Aucun devoir à venir !", text_color="gray")
-            self._lbl_info.grid(row=0, column=0, pady=20)
+        if not hw_list:
+            self._show_info("🎉  Aucun devoir à venir !", error=False)
             return
 
-        # Grouper par date d'échéance
         today = date.today()
         days: dict[date, list] = {}
-        for hw in homework_list:
+        for hw in hw_list:
             hw_date = hw.date if isinstance(hw.date, date) else hw.date.date()
             days.setdefault(hw_date, []).append(hw)
 
         row = 0
         for hw_date in sorted(days.keys()):
             delta = (hw_date - today).days
+
             if delta == 0:
-                label_date = "Aujourd'hui"
-                color_header = ("orange", "#e67e22")
+                label = "Aujourd'hui"
+                head_color = C["danger"]
             elif delta == 1:
-                label_date = "Demain"
-                color_header = ("orange", "#e67e22")
+                label = "Demain"
+                head_color = C["warning"]
+            elif delta <= 3:
+                label = hw_date.strftime("%A %d %B").capitalize()
+                head_color = C["warning"]
             else:
-                label_date = hw_date.strftime("%A %d %B").capitalize()
-                color_header = ("gray85", "gray25")
+                label = hw_date.strftime("%A %d %B").capitalize()
+                head_color = C["day_head"]
 
             # En-tête de date
-            header = ctk.CTkLabel(
+            day_frame = ctk.CTkFrame(
                 self._scroll,
-                text=f"  📅 {label_date}  ({hw_date.strftime('%d/%m/%Y')})",
-                font=ctk.CTkFont(size=13, weight="bold"),
-                anchor="w",
-                fg_color=color_header,
-                corner_radius=6,
+                fg_color=head_color,
+                corner_radius=10,
             )
-            header.grid(row=row, column=0, padx=4, pady=(12, 4), sticky="ew")
+            day_frame.grid(row=row, column=0, sticky="ew", pady=(14, 4))
+            ctk.CTkLabel(
+                day_frame,
+                text=f"  📅  {label}  ·  {hw_date.strftime('%d/%m/%Y')}",
+                font=ctk.CTkFont(size=13, weight="bold"),
+                text_color="#ffffff",
+                anchor="w",
+            ).grid(row=0, column=0, padx=12, pady=6, sticky="w")
             row += 1
 
             for hw in days[hw_date]:
-                card = self._make_homework_card(hw)
-                card.grid(row=row, column=0, padx=4, pady=2, sticky="ew")
+                card = self._make_hw_card(hw)
+                card.grid(row=row, column=0, sticky="ew", pady=2)
                 row += 1
 
-    def _make_homework_card(self, hw) -> ctk.CTkFrame:
-        """Crée une carte pour un devoir."""
+    def _make_hw_card(self, hw) -> ctk.CTkFrame:
         done = getattr(hw, "done", False)
-        color = "#95a5a6" if done else "#3498db"
+        subject = getattr(hw, "subject", None)
+        name = subject.name if subject else "Matière inconnue"
+        color = C["done"] if done else _subject_color(name)
 
-        frame = ctk.CTkFrame(self._scroll, corner_radius=8, border_width=2, border_color=color)
+        frame = ctk.CTkFrame(
+            self._scroll,
+            fg_color=C["card"],
+            corner_radius=10,
+        )
         frame.grid_columnconfigure(1, weight=1)
 
         # Bande colorée gauche
-        ctk.CTkFrame(frame, width=6, fg_color=color, corner_radius=6).grid(
-            row=0, column=0, rowspan=2, padx=(4, 8), pady=4, sticky="ns"
-        )
+        ctk.CTkFrame(
+            frame, width=4, fg_color=color, corner_radius=4
+        ).grid(row=0, column=0, rowspan=2, padx=(6, 10), pady=8, sticky="ns")
 
-        subject = getattr(hw, "subject", None)
-        subject_name = subject.name if subject else "Matière inconnue"
-        description = getattr(hw, "description", "") or ""
-
-        # Nettoyer le HTML basique
-        description = description.replace("<br />", "\n").replace("<br>", "\n")
-
-        status_icon = "✅" if done else "📝"
-
+        # Matière + statut
+        icon = "✅" if done else "📝"
         ctk.CTkLabel(
             frame,
-            text=f"{status_icon}  {subject_name}",
+            text=f"{icon}  {name}",
             font=ctk.CTkFont(size=13, weight="bold"),
+            text_color=C["subtext"] if done else C["text"],
             anchor="w",
-        ).grid(row=0, column=1, padx=4, pady=(6, 2), sticky="w")
+        ).grid(row=0, column=1, padx=(0, 12), pady=(10, 2), sticky="w")
 
-        if description:
+        # Description
+        desc = getattr(hw, "description", "") or ""
+        desc = desc.replace("<br />", " ").replace("<br>", " ").strip()
+        if desc:
             ctk.CTkLabel(
                 frame,
-                text=description[:200] + ("…" if len(description) > 200 else ""),
-                font=ctk.CTkFont(size=11),
-                text_color="gray",
+                text=desc[:240] + ("…" if len(desc) > 240 else ""),
+                font=ctk.CTkFont(size=12),
+                text_color=C["subtext"],
                 anchor="w",
-                wraplength=480,
+                wraplength=520,
                 justify="left",
-            ).grid(row=1, column=1, padx=4, pady=(0, 6), sticky="w")
+            ).grid(row=1, column=1, padx=(0, 12), pady=(0, 10), sticky="w")
 
         return frame
 
     def _clear_cards(self) -> None:
-        for widget in self._scroll.winfo_children():
-            if widget is not self._lbl_info:
-                widget.destroy()
+        for w in self._scroll.winfo_children():
+            if w is not self._lbl_info:
+                w.destroy()
 
-    def _show_error(self, message: str) -> None:
-        self._lbl_info.configure(text=f"⚠ {message}", text_color="red")
-        self._lbl_info.grid(row=0, column=0, pady=20)
+    def _show_info(self, msg: str, *, error: bool = False) -> None:
+        self._lbl_info.configure(
+            text=msg,
+            text_color=C["danger"] if error else C["subtext"],
+        )
+        self._lbl_info.grid(row=0, column=0, pady=40)
