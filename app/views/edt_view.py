@@ -38,6 +38,12 @@ SUBJECT_COLORS = [
 ]
 
 JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"]
+MOIS_FR = ["", "Jan", "Fév", "Mar", "Avr", "Mai", "Juin",
+           "Juil", "Août", "Sep", "Oct", "Nov", "Déc"]
+
+
+def _fmt_date(d) -> str:
+    return f"{d.day:02d} {MOIS_FR[d.month]}"
 
 HOUR_START = 7
 HOUR_END   = 19
@@ -173,7 +179,7 @@ class EdtView(ctk.CTkFrame):
     def refresh(self) -> None:
         sunday = self._current_monday + timedelta(days=6)
         self._lbl_semaine.configure(
-            text=f"{self._current_monday.strftime('%d %b')}  —  {sunday.strftime('%d %b %Y')}"
+            text=f"{_fmt_date(self._current_monday)}  —  {_fmt_date(sunday)} {sunday.year}"
         )
         self._canvas.grid_remove()
         self._lbl_info.configure(text="Chargement…", text_color=TEXT_SUB)
