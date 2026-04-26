@@ -201,7 +201,7 @@ class EdtView(ctk.CTkFrame):
         # Bande colorée
         ctk.CTkFrame(
             frame, width=3, fg_color=color, corner_radius=2
-        ).grid(row=0, column=0, padx=(4, 8), pady=6, sticky="ns")
+        ).grid(row=0, column=0, padx=(4, 8), pady=2, sticky="ns")
 
         time_str = f"{lesson.start.strftime('%H:%M')}–{lesson.end.strftime('%H:%M')}"
         teacher = getattr(lesson, "teacher_name", "") or ""
@@ -213,10 +213,10 @@ class EdtView(ctk.CTkFrame):
         ctk.CTkLabel(
             frame,
             text=line,
-            font=ctk.CTkFont(size=12),
+            font=ctk.CTkFont(size=11),
             text_color=C["danger"] if (canceled or teacher_absent) else C["text"],
             anchor="w",
-        ).grid(row=0, column=2, padx=(0, 10), pady=6, sticky="ew")
+        ).grid(row=0, column=2, padx=(0, 10), pady=2, sticky="ew")
 
         return frame
 
