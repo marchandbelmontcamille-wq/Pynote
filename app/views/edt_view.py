@@ -177,7 +177,7 @@ class EdtView(ctk.CTkFrame):
 
             for lesson in days[weekday]:
                 card = self._make_lesson_card(lesson)
-                card.grid(row=row, column=0, sticky="ew", pady=2)
+                card.grid(row=row, column=0, sticky="ew", pady=1)
                 row += 1
 
     def _make_lesson_card(self, lesson) -> ctk.CTkFrame:
@@ -201,7 +201,7 @@ class EdtView(ctk.CTkFrame):
         # Bande de couleur gauche
         ctk.CTkFrame(
             frame, width=3, fg_color=color, corner_radius=3
-        ).grid(row=0, column=0, rowspan=2, padx=(5, 8), pady=6, sticky="ns")
+        ).grid(row=0, column=0, rowspan=2, padx=(5, 8), pady=3, sticky="ns")
 
         # Heure + matière sur une seule ligne
         time_str = f"{lesson.start.strftime('%H:%M')} – {lesson.end.strftime('%H:%M')}"
@@ -217,7 +217,7 @@ class EdtView(ctk.CTkFrame):
             font=ctk.CTkFont(size=12, weight="bold"),
             text_color=C["danger"] if (canceled or teacher_absent) else C["text"],
             anchor="w",
-        ).grid(row=0, column=1, padx=(0, 8), pady=(6, 1), sticky="w")
+        ).grid(row=0, column=1, padx=(0, 8), pady=(4, 0), sticky="w")
 
         # Sous-ligne : heure + prof + salle
         teacher = getattr(lesson, "teacher_name", "") or ""
@@ -229,7 +229,7 @@ class EdtView(ctk.CTkFrame):
             font=ctk.CTkFont(size=11),
             text_color=C["subtext"],
             anchor="w",
-        ).grid(row=1, column=1, padx=(0, 8), pady=(0, 6), sticky="w")
+        ).grid(row=1, column=1, padx=(0, 8), pady=(0, 4), sticky="w")
 
         return frame
 

@@ -153,7 +153,7 @@ class DevoirsView(ctk.CTkFrame):
 
             for hw in days[hw_date]:
                 card = self._make_hw_card(hw)
-                card.grid(row=row, column=0, sticky="ew", pady=2)
+                card.grid(row=row, column=0, sticky="ew", pady=1)
                 row += 1
 
     def _make_hw_card(self, hw) -> ctk.CTkFrame:
@@ -172,7 +172,7 @@ class DevoirsView(ctk.CTkFrame):
         # Bande colorée gauche
         ctk.CTkFrame(
             frame, width=3, fg_color=color, corner_radius=3
-        ).grid(row=0, column=0, rowspan=2, padx=(5, 8), pady=6, sticky="ns")
+        ).grid(row=0, column=0, rowspan=2, padx=(5, 8), pady=3, sticky="ns")
 
         # Matière + statut
         icon = "✅" if done else "📝"
@@ -182,7 +182,7 @@ class DevoirsView(ctk.CTkFrame):
             font=ctk.CTkFont(size=12, weight="bold"),
             text_color=C["subtext"] if done else C["text"],
             anchor="w",
-        ).grid(row=0, column=1, padx=(0, 12), pady=(6, 1), sticky="w")
+        ).grid(row=0, column=1, padx=(0, 12), pady=(4, 0), sticky="w")
 
         # Description
         desc = getattr(hw, "description", "") or ""
@@ -196,7 +196,7 @@ class DevoirsView(ctk.CTkFrame):
                 anchor="w",
                 wraplength=520,
                 justify="left",
-            ).grid(row=1, column=1, padx=(0, 12), pady=(0, 6), sticky="w")
+            ).grid(row=1, column=1, padx=(0, 12), pady=(0, 4), sticky="w")
 
         return frame
 
