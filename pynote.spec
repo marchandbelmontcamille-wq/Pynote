@@ -9,12 +9,14 @@ from pathlib import Path
 
 block_cipher = None
 
-# Inclure build_type.txt et VERSION dans le bundle
+# Inclure build_type.txt, VERSION et l'icône dans le bundle
 _datas = []
 if os.path.exists("build_type.txt"):
     _datas.append(("build_type.txt", "."))
 if os.path.exists("VERSION"):
     _datas.append(("VERSION", "."))
+if os.path.exists("assets/icon.ico"):
+    _datas.append(("assets/icon.ico", "assets"))
 
 a = Analysis(
     ["main.py"],
@@ -55,7 +57,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,
+    icon='assets/icon.ico',
 )
 
 coll = COLLECT(
