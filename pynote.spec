@@ -4,16 +4,21 @@ PyInstaller spec — Pynote
 Génère un exécutable Windows autonome (un seul dossier).
 """
 
-import sys
+import os
 from pathlib import Path
 
 block_cipher = None
+
+# Inclure build_type.txt s'il existe (injecté par CI pour indiquer dev/prod)
+_datas = []
+if os.path.exists("build_type.txt"):
+    _datas = [("build_type.txt", ".")]
 
 a = Analysis(
     ["main.py"],
     pathex=[str(Path(".").resolve())],
     binaries=[],
-    datas=[],
+    datas=_datas,
     hiddenimports=[
         "customtkinter",
         "pronotepy",
@@ -43,12 +48,12 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,       # Pas de fenêtre console
+    console=False,
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,           # Remplacer par "assets/icon.ico" si disponible
+    icon=None,
 )
 
 coll = COLLECT(

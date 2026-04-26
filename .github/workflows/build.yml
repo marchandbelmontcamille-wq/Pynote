@@ -29,15 +29,13 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Build with PyInstaller
-        run: pyinstaller pynote.spec --noconfirm
-
       - name: Set release variables (stable)
         if: startsWith(github.ref_name, 'v')
         run: |
           echo "IS_PRERELEASE=false" >> $env:GITHUB_ENV
           echo "ZIP_NAME=Pynote-windows.zip" >> $env:GITHUB_ENV
           echo "RELEASE_LABEL=Version stable" >> $env:GITHUB_ENV
+          Set-Content -Path build_type.txt -Value "prod" -Encoding UTF8
 
       - name: Set release variables (dev)
         if: startsWith(github.ref_name, 'dev-')
@@ -45,6 +43,10 @@ jobs:
           echo "IS_PRERELEASE=true" >> $env:GITHUB_ENV
           echo "ZIP_NAME=Pynote-dev-windows.zip" >> $env:GITHUB_ENV
           echo "RELEASE_LABEL=Dev Preview" >> $env:GITHUB_ENV
+          Set-Content -Path build_type.txt -Value "dev" -Encoding UTF8
+
+      - name: Build with PyInstaller
+        run: pyinstaller pynote.spec --noconfirm
 
       - name: Zip the output
         run: |
