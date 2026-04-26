@@ -39,8 +39,12 @@ class PronoteService:
             logger.info("Connexion réussie pour %s", username)
         except Exception as exc:
             self._client = None
-            logger.error("Échec de connexion : %s", exc)
-            raise ConnectionError(str(exc)) from exc
+            # Extraire un message lisible (CryptoError a des args tuple)
+            msg = exc.args[0] if exc.args else str(exc)
+            if isinstance(msg, tuple):
+                msg = msg[0]
+            logger.error("Échec de connexion : %s", msg)
+            raise ConnectionError(str(msg)) from exc
 
     def disconnect(self) -> None:
         """Déconnecte le client Pronote."""
