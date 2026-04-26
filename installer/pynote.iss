@@ -2,7 +2,10 @@
 ; Génère un installateur Windows avec wizard, raccourcis et désinstallateur
 
 #define MyAppName "Pynote"
-#define MyAppVersion GetFileContents("..\VERSION")
+; MyAppVersion est passé en ligne de commande par le CI : /DMyAppVersion=0.1.0
+#ifndef MyAppVersion
+  #define MyAppVersion "0.0.0"
+#endif
 #define MyAppExeName "Pynote.exe"
 #define MyAppPublisher "marchandbelmontcamille-wq"
 #define MyAppURL "https://github.com/marchandbelmontcamille-wq/Pynote"

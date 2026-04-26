@@ -50,7 +50,8 @@ jobs:
         shell: pwsh
         run: |
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-          & $iscc /O"installer_output" /F"${{ env.INSTALLER }}" installer\pynote.iss
+          $version = (Get-Content VERSION).Trim()
+          & $iscc /O"installer_output" /F"${{ env.INSTALLER }}" "/DMyAppVersion=$version" installer\pynote.iss
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
 
       - name: Cleanup old releases and drafts
