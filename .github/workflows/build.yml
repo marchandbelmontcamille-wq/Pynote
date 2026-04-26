@@ -1,0 +1,62 @@
+name: Build & Release Pynote
+
+on:
+  push:
+    tags:
+      - "v*"        # Release stable — ex: v1.0.0
+      - "0.*"       # Pre-release — ex: 0.1.0
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Detect build type
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ($tag -like "v*") {
+            "APP_ENV=prod" | Out-File -FilePath build_type.txt -Encoding utf8
+            "IS_PRE=false" | Add-Content $env:GITHUB_ENV
+            "ZIP=Pynote-windows.zip" | Add-Content $env:GITHUB_ENV
+          } else {
+            "APP_ENV=dev" | Out-File -FilePath build_type.txt -Encoding utf8
+            "IS_PRE=true" | Add-Content $env:GITHUB_ENV
+            "ZIP=Pynote-dev-windows.zip" | Add-Content $env:GITHUB_ENV
+          }
+
+      - name: Build EXE
+        run: pyinstaller pynote.spec --noconfirm
+
+      - name: Package
+        run: Compress-Archive -Path dist\Pynote\* -DestinationPath ${{ env.ZIP }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ env.IS_PRE }}
+          files: ${{ env.ZIP }}
+          body: |
+            ## 🎓 Pynote ${{ github.ref_name }}
+
+            ### Installation (Windows)
+            1. Téléchargez **${{ env.ZIP }}**
+            2. Extrayez le dossier
+            3. Double-cliquez sur **Pynote.exe**
+            4. Saisissez l'URL Pronote de votre établissement + vos identifiants
+
+            > Aucune installation de Python requise.
