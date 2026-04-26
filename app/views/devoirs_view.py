@@ -156,39 +156,27 @@ class DevoirsView(ctk.CTkFrame):
                 card.grid(row=row, column=0, sticky="ew", pady=1)
                 row += 1
 
-    def _make_hw_card(self, hw) -> ctk.CTkFrame:
+    def _make_hw_card(self, hw) -> ctk.CTkLabel:
         done = getattr(hw, "done", False)
         subject = getattr(hw, "subject", None)
         name = subject.name if subject else "Matière inconnue"
-        color = C["done"] if done else _subject_color(name)
-
-        frame = ctk.CTkFrame(
-            self._scroll,
-            fg_color=C["card"],
-            corner_radius=8,
-        )
-        frame.grid_columnconfigure(2, weight=1)
-
-        # Bande colorée
-        ctk.CTkFrame(
-            frame, width=3, fg_color=color, corner_radius=2
-        ).grid(row=0, column=0, padx=(4, 8), pady=2, sticky="ns")
 
         icon = "✅" if done else "📝"
         desc = getattr(hw, "description", "") or ""
         desc = desc.replace("<br />", " ").replace("<br>", " ").strip()
         short_desc = f"  —  {desc[:80]}{'…' if len(desc) > 80 else ''}" if desc else ""
-        line = f"{icon}  {name}{short_desc}"
+        line = f"  {icon}  {name}{short_desc}"
 
-        ctk.CTkLabel(
-            frame,
+        return ctk.CTkLabel(
+            self._scroll,
             text=line,
             font=ctk.CTkFont(size=11),
             text_color=C["subtext"] if done else C["text"],
+            fg_color=C["card"],
             anchor="w",
-        ).grid(row=0, column=2, padx=(0, 10), pady=2, sticky="ew")
-
-        return frame
+            corner_radius=6,
+            height=24,
+        )
 
     def _clear_cards(self) -> None:
         for w in self._scroll.winfo_children():
