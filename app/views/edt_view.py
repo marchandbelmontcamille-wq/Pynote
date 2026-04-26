@@ -193,43 +193,32 @@ class EdtView(ctk.CTkFrame):
         frame = ctk.CTkFrame(
             self._scroll,
             fg_color=C["card"],
-            corner_radius=10,
+            corner_radius=8,
             border_width=0,
+            height=36,
         )
-        frame.grid_columnconfigure(1, weight=1)
+        frame.grid_propagate(False)
+        frame.grid_columnconfigure(2, weight=1)
 
-        # Bande de couleur gauche
+        # Bande colorée
         ctk.CTkFrame(
-            frame, width=3, fg_color=color, corner_radius=3
-        ).grid(row=0, column=0, rowspan=2, padx=(5, 8), pady=3, sticky="ns")
+            frame, width=3, fg_color=color, corner_radius=2
+        ).grid(row=0, column=0, padx=(4, 6), pady=4, sticky="ns")
 
-        # Heure + matière sur une seule ligne
-        time_str = f"{lesson.start.strftime('%H:%M')} – {lesson.end.strftime('%H:%M')}"
-        title = name
-        if canceled:
-            title += "  🚫"
-        elif teacher_absent:
-            title += "  ⚠"
-
-        ctk.CTkLabel(
-            frame,
-            text=title,
-            font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=C["danger"] if (canceled or teacher_absent) else C["text"],
-            anchor="w",
-        ).grid(row=0, column=1, padx=(0, 8), pady=(4, 0), sticky="w")
-
-        # Sous-ligne : heure + prof + salle
+        time_str = f"{lesson.start.strftime('%H:%M')}–{lesson.end.strftime('%H:%M')}"
         teacher = getattr(lesson, "teacher_name", "") or ""
         classroom = getattr(lesson, "classroom", "") or ""
-        sub = "  ·  ".join(filter(None, [time_str, teacher, f"Salle {classroom}" if classroom else ""]))
+        flag = "  🚫" if canceled else ("  ⚠" if teacher_absent else "")
+        sub = "  ·  ".join(filter(None, [teacher, f"S.{classroom}" if classroom else ""]))
+        line = f"{name}{flag}   {time_str}" + (f"   {sub}" if sub else "")
+
         ctk.CTkLabel(
             frame,
-            text=sub,
-            font=ctk.CTkFont(size=11),
-            text_color=C["subtext"],
+            text=line,
+            font=ctk.CTkFont(size=12),
+            text_color=C["danger"] if (canceled or teacher_absent) else C["text"],
             anchor="w",
-        ).grid(row=1, column=1, padx=(0, 8), pady=(0, 4), sticky="w")
+        ).grid(row=0, column=2, padx=(0, 10), pady=0, sticky="w")
 
         return frame
 

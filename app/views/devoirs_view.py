@@ -165,38 +165,30 @@ class DevoirsView(ctk.CTkFrame):
         frame = ctk.CTkFrame(
             self._scroll,
             fg_color=C["card"],
-            corner_radius=10,
+            corner_radius=8,
+            height=36,
         )
-        frame.grid_columnconfigure(1, weight=1)
+        frame.grid_propagate(False)
+        frame.grid_columnconfigure(2, weight=1)
 
-        # Bande colorée gauche
+        # Bande colorée
         ctk.CTkFrame(
-            frame, width=3, fg_color=color, corner_radius=3
-        ).grid(row=0, column=0, rowspan=2, padx=(5, 8), pady=3, sticky="ns")
+            frame, width=3, fg_color=color, corner_radius=2
+        ).grid(row=0, column=0, padx=(4, 6), pady=4, sticky="ns")
 
-        # Matière + statut
         icon = "✅" if done else "📝"
-        ctk.CTkLabel(
-            frame,
-            text=f"{icon}  {name}",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=C["subtext"] if done else C["text"],
-            anchor="w",
-        ).grid(row=0, column=1, padx=(0, 12), pady=(4, 0), sticky="w")
-
-        # Description
         desc = getattr(hw, "description", "") or ""
         desc = desc.replace("<br />", " ").replace("<br>", " ").strip()
-        if desc:
-            ctk.CTkLabel(
-                frame,
-                text=desc[:200] + ("…" if len(desc) > 200 else ""),
-                font=ctk.CTkFont(size=11),
-                text_color=C["subtext"],
-                anchor="w",
-                wraplength=520,
-                justify="left",
-            ).grid(row=1, column=1, padx=(0, 12), pady=(0, 4), sticky="w")
+        short_desc = f"  —  {desc[:80]}{'…' if len(desc) > 80 else ''}" if desc else ""
+        line = f"{icon}  {name}{short_desc}"
+
+        ctk.CTkLabel(
+            frame,
+            text=line,
+            font=ctk.CTkFont(size=12),
+            text_color=C["subtext"] if done else C["text"],
+            anchor="w",
+        ).grid(row=0, column=2, padx=(0, 10), pady=0, sticky="w")
 
         return frame
 
