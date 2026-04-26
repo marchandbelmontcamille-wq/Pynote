@@ -139,16 +139,16 @@ class DevoirsView(ctk.CTkFrame):
             day_frame = ctk.CTkFrame(
                 self._scroll,
                 fg_color=head_color,
-                corner_radius=10,
+                corner_radius=7,
             )
-            day_frame.grid(row=row, column=0, sticky="ew", pady=(14, 4))
+            day_frame.grid(row=row, column=0, sticky="ew", pady=(10, 2))
             ctk.CTkLabel(
                 day_frame,
                 text=f"  📅  {label}  ·  {hw_date.strftime('%d/%m/%Y')}",
-                font=ctk.CTkFont(size=13, weight="bold"),
+                font=ctk.CTkFont(size=12, weight="bold"),
                 text_color="#ffffff",
                 anchor="w",
-            ).grid(row=0, column=0, padx=12, pady=6, sticky="w")
+            ).grid(row=0, column=0, padx=10, pady=4, sticky="w")
             row += 1
 
             for hw in days[hw_date]:
@@ -171,18 +171,18 @@ class DevoirsView(ctk.CTkFrame):
 
         # Bande colorée gauche
         ctk.CTkFrame(
-            frame, width=4, fg_color=color, corner_radius=4
-        ).grid(row=0, column=0, rowspan=2, padx=(6, 10), pady=8, sticky="ns")
+            frame, width=3, fg_color=color, corner_radius=3
+        ).grid(row=0, column=0, rowspan=2, padx=(5, 8), pady=6, sticky="ns")
 
         # Matière + statut
         icon = "✅" if done else "📝"
         ctk.CTkLabel(
             frame,
             text=f"{icon}  {name}",
-            font=ctk.CTkFont(size=13, weight="bold"),
+            font=ctk.CTkFont(size=12, weight="bold"),
             text_color=C["subtext"] if done else C["text"],
             anchor="w",
-        ).grid(row=0, column=1, padx=(0, 12), pady=(10, 2), sticky="w")
+        ).grid(row=0, column=1, padx=(0, 12), pady=(6, 1), sticky="w")
 
         # Description
         desc = getattr(hw, "description", "") or ""
@@ -190,13 +190,13 @@ class DevoirsView(ctk.CTkFrame):
         if desc:
             ctk.CTkLabel(
                 frame,
-                text=desc[:240] + ("…" if len(desc) > 240 else ""),
-                font=ctk.CTkFont(size=12),
+                text=desc[:200] + ("…" if len(desc) > 200 else ""),
+                font=ctk.CTkFont(size=11),
                 text_color=C["subtext"],
                 anchor="w",
                 wraplength=520,
                 justify="left",
-            ).grid(row=1, column=1, padx=(0, 12), pady=(0, 10), sticky="w")
+            ).grid(row=1, column=1, padx=(0, 12), pady=(0, 6), sticky="w")
 
         return frame
 

@@ -131,19 +131,19 @@ class PynoteApp(ctk.CTk):
         for i, (key, icon, label) in enumerate(NAV_ITEMS):
             btn = ctk.CTkButton(
                 sb,
-                text=f"  {icon}   {label}",
+                text=f" {icon}  {label}",
                 anchor="w",
-                width=200,
-                height=44,
-                font=ctk.CTkFont(size=13),
+                width=192,
+                height=34,
+                font=ctk.CTkFont(size=12),
                 fg_color="transparent",
                 hover_color=C["nav_hover"],
                 text_color=C["subtext"],
-                corner_radius=8,
+                corner_radius=6,
                 border_spacing=0,
                 command=lambda k=key: self._switch_view(k),
             )
-            btn.grid(row=i + 2, column=0, padx=10, pady=2)
+            btn.grid(row=i + 2, column=0, padx=14, pady=2)
             self._nav_buttons[key] = btn
 
         # Séparateur bas

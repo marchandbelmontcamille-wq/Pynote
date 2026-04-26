@@ -163,16 +163,16 @@ class EdtView(ctk.CTkFrame):
             day_frame = ctk.CTkFrame(
                 self._scroll,
                 fg_color=C["accent"] if is_today else C["day_head"],
-                corner_radius=10,
+                corner_radius=7,
             )
-            day_frame.grid(row=row, column=0, sticky="ew", pady=(14, 4))
+            day_frame.grid(row=row, column=0, sticky="ew", pady=(10, 2))
             ctk.CTkLabel(
                 day_frame,
                 text=f"  {JOURS[weekday]}  {day_date.strftime('%d %B')}",
-                font=ctk.CTkFont(size=13, weight="bold"),
-                text_color="#ffffff" if is_today else C["text"],
+                font=ctk.CTkFont(size=12, weight="bold"),
+                text_color="#ffffff" if is_today else C["subtext"],
                 anchor="w",
-            ).grid(row=0, column=0, padx=12, pady=6, sticky="w")
+            ).grid(row=0, column=0, padx=10, pady=4, sticky="w")
             row += 1
 
             for lesson in days[weekday]:
@@ -200,47 +200,36 @@ class EdtView(ctk.CTkFrame):
 
         # Bande de couleur gauche
         ctk.CTkFrame(
-            frame, width=4, fg_color=color, corner_radius=4
-        ).grid(row=0, column=0, rowspan=2, padx=(6, 10), pady=8, sticky="ns")
+            frame, width=3, fg_color=color, corner_radius=3
+        ).grid(row=0, column=0, rowspan=2, padx=(5, 8), pady=6, sticky="ns")
 
-        # Heure
+        # Heure + matière sur une seule ligne
         time_str = f"{lesson.start.strftime('%H:%M')} – {lesson.end.strftime('%H:%M')}"
-        ctk.CTkLabel(
-            frame,
-            text=time_str,
-            font=ctk.CTkFont(size=11),
-            text_color=C["subtext"],
-            width=90,
-            anchor="w",
-        ).grid(row=0, column=1, padx=(0, 8), pady=(8, 0), sticky="w")
-
-        # Matière
         title = name
         if canceled:
-            title += "  —  🚫 Cours annulé"
+            title += "  🚫"
         elif teacher_absent:
-            title += "  —  ⚠ Prof absent"
+            title += "  ⚠"
 
         ctk.CTkLabel(
             frame,
             text=title,
-            font=ctk.CTkFont(size=13, weight="bold"),
+            font=ctk.CTkFont(size=12, weight="bold"),
             text_color=C["danger"] if (canceled or teacher_absent) else C["text"],
             anchor="w",
-        ).grid(row=1, column=1, padx=(0, 8), pady=(0, 8), sticky="w")
+        ).grid(row=0, column=1, padx=(0, 8), pady=(6, 1), sticky="w")
 
-        # Détails (prof + salle)
+        # Sous-ligne : heure + prof + salle
         teacher = getattr(lesson, "teacher_name", "") or ""
         classroom = getattr(lesson, "classroom", "") or ""
-        details = "  ·  ".join(filter(None, [teacher, f"Salle {classroom}" if classroom else ""]))
-        if details:
-            ctk.CTkLabel(
-                frame,
-                text=details,
-                font=ctk.CTkFont(size=11),
-                text_color=C["subtext"],
-                anchor="e",
-            ).grid(row=0, column=2, padx=(0, 14), pady=(8, 0), sticky="e")
+        sub = "  ·  ".join(filter(None, [time_str, teacher, f"Salle {classroom}" if classroom else ""]))
+        ctk.CTkLabel(
+            frame,
+            text=sub,
+            font=ctk.CTkFont(size=11),
+            text_color=C["subtext"],
+            anchor="w",
+        ).grid(row=1, column=1, padx=(0, 8), pady=(0, 6), sticky="w")
 
         return frame
 
