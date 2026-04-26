@@ -169,7 +169,7 @@ class EdtView(ctk.CTkFrame):
     def _load_thread(self) -> None:
         try:
             lessons = self._service.get_timetable(self._current_monday)
-            self.after(0, lambda: self._draw(lessons))
+            self.after(0, lambda: self._render_grid(lessons))
         except Exception as exc:
             msg = str(exc) if config.IS_DEV else "Impossible de charger l'emploi du temps."
             self.after(0, lambda: self._show_info(f"⚠  {msg}", error=True))
@@ -178,7 +178,7 @@ class EdtView(ctk.CTkFrame):
     # Dessin
     # ------------------------------------------------------------------
 
-    def _draw(self, lessons: list) -> None:
+    def _render_grid(self, lessons: list) -> None:
         self._lbl_info.grid_remove()
         c = self._canvas
         c.delete("all")
