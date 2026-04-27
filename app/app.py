@@ -12,6 +12,8 @@ from app.pronote_service import PronoteService
 from app.views.login_view import LoginView
 from app.views.edt_view import EdtView
 from app.views.devoirs_view import DevoirsView
+from app.views.notes_view import NotesView
+from app.views.absences_view import AbsencesView
 
 logger = logging.getLogger("pynote.app")
 
@@ -36,8 +38,10 @@ C = {
 }
 
 NAV_ITEMS = [
-    ("edt",     "📅",  "Emploi du temps"),
-    ("devoirs", "📝",  "Devoirs"),
+    ("edt",      "📅",  "Emploi du temps"),
+    ("devoirs",  "📝",  "Devoirs"),
+    ("notes",    "📊",  "Notes"),
+    ("absences", "🚫",  "Absences"),
 ]
 
 
@@ -108,12 +112,16 @@ class PynoteApp(ctk.CTk):
         content.grid_columnconfigure(0, weight=1)
         content.grid_rowconfigure(0, weight=1)
 
-        edt_view     = EdtView(content, self._service)
-        devoirs_view = DevoirsView(content, self._service)
+        edt_view      = EdtView(content, self._service)
+        devoirs_view  = DevoirsView(content, self._service)
+        notes_view    = NotesView(content, self._service)
+        absences_view = AbsencesView(content, self._service)
 
         self._views: dict[str, ctk.CTkFrame] = {
-            "edt":     edt_view,
-            "devoirs": devoirs_view,
+            "edt":      edt_view,
+            "devoirs":  devoirs_view,
+            "notes":    notes_view,
+            "absences": absences_view,
         }
         for v in self._views.values():
             v.grid(row=0, column=0, sticky="nsew")
