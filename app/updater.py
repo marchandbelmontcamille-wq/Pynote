@@ -117,7 +117,7 @@ def _check_thread(root: ctk.CTk, silent: bool) -> None:
     data = _fetch_latest_release(allow_prerelease=allow_pre)
     if data is None:
         if not silent:
-            root.after(0, lambda: _show_up_to_date(root, config.APP_VERSION.strip()))
+            root.after(0, lambda: _show_error(root, "Impossible de contacter GitHub.\nVérifiez votre connexion ou désactivez Avast temporairement."))
         return
 
     latest_tag  = data.get("tag_name", "").lstrip("v")
@@ -159,7 +159,6 @@ class UpdateDialog(ctk.CTkToplevel):
         self.resizable(True, True)
         self.configure(fg_color=C["card"])
         self.grab_set()
-        self.focus_force()
 
         self.update_idletasks()
         x = master.winfo_rootx() + (master.winfo_width()  - 520) // 2
@@ -169,6 +168,7 @@ class UpdateDialog(ctk.CTkToplevel):
         self._url  = installer_url
         self._name = installer_name
         self._build(current, latest, notes)
+        self.after(50, lambda: _bring_to_front(self))
 
     def _build(self, current, latest, notes) -> None:
         self.grid_columnconfigure(0, weight=1)
