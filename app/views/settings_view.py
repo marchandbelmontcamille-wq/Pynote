@@ -159,11 +159,20 @@ class SettingsView(ctk.CTkFrame):
         card.grid(row=row, column=0, sticky="ew", padx=24, pady=6)
         card.grid_columnconfigure(0, weight=1)
 
+        import sys
+        # En mode script non bundlé → toujours DEV
+        _is_bundled = hasattr(sys, "_MEIPASS")
+        if _is_bundled:
+            _env = "DEV" if config.IS_DEV else "Stable"
+        else:
+            _env = "DEV (local)"
+
         items = [
-            ("Version",    f"{config.APP_VERSION}  {'(DEV)' if config.IS_DEV else '(Stable)'}"),
-            ("Licence",    "MIT — marchandbelmontcamille-wq"),
-            ("GitHub",     "github.com/marchandbelmontcamille-wq/Pynote"),
-            ("Basé sur",   "pronotepy + CustomTkinter"),
+            ("Version",      config.APP_VERSION),
+            ("Environnement", _env),
+            ("Licence",      "MIT — marchandbelmontcamille-wq"),
+            ("GitHub",       "github.com/marchandbelmontcamille-wq/Pynote"),
+            ("Basé sur",     "pronotepy + CustomTkinter"),
         ]
         for i, (k, v) in enumerate(items):
             ctk.CTkLabel(
