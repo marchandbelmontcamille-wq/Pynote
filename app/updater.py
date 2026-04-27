@@ -130,15 +130,14 @@ def _show_update_dialog(root: ctk.CTk, current: str, latest: str,
                         release_url: str, notes: str) -> None:
     dlg = ctk.CTkToplevel(root)
     dlg.title("Mise à jour disponible — Pynote")
-    dlg.geometry("480x320")
-    dlg.resizable(True, True)
+    dlg.geometry("420x170")
+    dlg.resizable(False, False)
     dlg.configure(fg_color=C["card"])
     dlg.grab_set()
     dlg.grid_columnconfigure(0, weight=1)
-    dlg.grid_rowconfigure(2, weight=1)
 
-    x = root.winfo_rootx() + (root.winfo_width()  - 480) // 2
-    y = root.winfo_rooty() + (root.winfo_height() - 320) // 2
+    x = root.winfo_rootx() + (root.winfo_width()  - 420) // 2
+    y = root.winfo_rooty() + (root.winfo_height() - 170) // 2
     dlg.geometry(f"+{max(0,x)}+{max(0,y)}")
     dlg.after(50, lambda: _bring_to_front(dlg))
 
@@ -154,24 +153,10 @@ def _show_update_dialog(root: ctk.CTk, current: str, latest: str,
         text=f"Version actuelle : {current}   →   Nouvelle version : {latest}",
         font=ctk.CTkFont(size=11),
         text_color=C["text"],
-    ).grid(row=1, column=0, padx=24, pady=(0, 8), sticky="w")
-
-    # Notes de release
-    box = ctk.CTkTextbox(
-        dlg,
-        font=ctk.CTkFont(size=10),
-        fg_color="#0a0d14",
-        text_color=C["subtext"],
-        border_width=1,
-        border_color=C["border"],
-        corner_radius=6,
-    )
-    box.grid(row=2, column=0, padx=24, pady=(0, 12), sticky="nsew")
-    box.insert("1.0", notes or "Aucune note de version disponible.")
-    box.configure(state="disabled")
+    ).grid(row=1, column=0, padx=24, pady=(0, 16), sticky="w")
 
     btn_frame = ctk.CTkFrame(dlg, fg_color="transparent")
-    btn_frame.grid(row=3, column=0, padx=24, pady=(0, 20), sticky="e")
+    btn_frame.grid(row=2, column=0, padx=24, pady=(0, 20), sticky="e")
 
     ctk.CTkButton(
         btn_frame,
