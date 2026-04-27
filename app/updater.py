@@ -270,6 +270,17 @@ class UpdateDialog(ctk.CTkToplevel):
             )
 
 
+def _bring_to_front(dlg: ctk.CTkToplevel) -> None:
+    """Force le dialog au premier plan sur Windows."""
+    try:
+        dlg.lift()
+        dlg.attributes("-topmost", True)
+        dlg.after(200, lambda: dlg.attributes("-topmost", False))
+        dlg.focus_force()
+    except Exception:
+        pass
+
+
 def _show_up_to_date(root: ctk.CTk, version: str) -> None:
     dlg = ctk.CTkToplevel(root)
     dlg.title("Pynote — À jour")
@@ -277,10 +288,10 @@ def _show_up_to_date(root: ctk.CTk, version: str) -> None:
     dlg.resizable(False, False)
     dlg.configure(fg_color=C["card"])
     dlg.grab_set()
-    dlg.focus_force()
     x = root.winfo_rootx() + (root.winfo_width()  - 340) // 2
     y = root.winfo_rooty() + (root.winfo_height() - 130) // 2
     dlg.geometry(f"+{max(0,x)}+{max(0,y)}")
+    dlg.after(50, lambda: _bring_to_front(dlg))
     ctk.CTkLabel(
         dlg, text=f"✅  Pynote {version} est à jour.",
         font=ctk.CTkFont(size=12), text_color=C["success"],
@@ -299,10 +310,10 @@ def _show_error(root: ctk.CTk, msg: str) -> None:
     dlg.resizable(False, False)
     dlg.configure(fg_color=C["card"])
     dlg.grab_set()
-    dlg.focus_force()
     x = root.winfo_rootx() + (root.winfo_width()  - 360) // 2
     y = root.winfo_rooty() + (root.winfo_height() - 130) // 2
     dlg.geometry(f"+{max(0,x)}+{max(0,y)}")
+    dlg.after(50, lambda: _bring_to_front(dlg))
     ctk.CTkLabel(
         dlg, text=f"❌  {msg}",
         font=ctk.CTkFont(size=12), text_color=C["danger"], wraplength=300,
