@@ -32,8 +32,9 @@ def _load_prefs() -> dict:
 
 logger = logging.getLogger("pynote.updater")
 
-GITHUB_API = "https://api.github.com/repos/marchandbelmontcamille-wq/Pynote/releases/latest"
-GITHUB_RELEASES = "https://github.com/marchandbelmontcamille-wq/Pynote/releases/latest"
+GITHUB_API        = "https://api.github.com/repos/marchandbelmontcamille-wq/Pynote/releases"
+GITHUB_API_LATEST = "https://api.github.com/repos/marchandbelmontcamille-wq/Pynote/releases/latest"
+GITHUB_RELEASES   = "https://github.com/marchandbelmontcamille-wq/Pynote/releases/latest"
 
 C = {
     "bg":      "#0f1117",
@@ -57,15 +58,33 @@ def _parse_version(v: str) -> tuple:
         return (0, 0, 0)
 
 
-def _fetch_latest_release() -> dict | None:
-    """Interroge l'API GitHub et retourne les infos de la release la plus récente."""
+def _fetch_latest_release(allow_prerelease: bool = False) -> dict | None:
+    """
+    Interroge l'API GitHub.
+    - Si allow_prerelease=False : utilise /releases/latest (stable uniquement)
+    - Si allow_prerelease=True  : utilise /releases et prend la plus récente
+    Retourne None si aucune release trouvée ou erreur réseau.
+    """
+    headers = {"User-Agent": f"Pynote/{config.APP_VERSION}"}
     try:
-        req = urllib.request.Request(
-            GITHUB_API,
-            headers={"User-Agent": f"Pynote/{config.APP_VERSION}"},
-        )
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            return json.loads(resp.read().decode())
+        if allow_prerelease:
+            # Récupérer toutes les releases et prendre la plus récente (index 0)
+            req = urllib.request.Request(GITHUB_API + "?per_page=5", headers=headers)
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                releases = json.loads(resp.read().decode())
+            return releases[0] if releases else None
+        else:
+            # /releases/latest = première release stable uniquement
+            req = urllib.request.Request(GITHUB_API_LATEST, headers=headers)
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            # Aucune release stable publiée
+            logger.info("Aucune release stable disponible (404)")
+            return None
+        logger.warning("Impossible de vérifier les mises à jour : %s", exc)
+        return None
     except Exception as exc:
         logger.warning("Impossible de vérifier les mises à jour : %s", exc)
         return None
@@ -91,25 +110,18 @@ def check_for_updates(root: ctk.CTk, *, silent: bool = True) -> None:
 
 
 def _check_thread(root: ctk.CTk, silent: bool) -> None:
-    data = _fetch_latest_release()
-    if data is None:
-        if not silent:
-            root.after(0, lambda: _show_error(root, "Impossible de contacter GitHub."))
-        return
-
-    latest_tag    = data.get("tag_name", "").lstrip("v")
-    current_ver   = config.APP_VERSION.strip()
-    is_prerelease = data.get("prerelease", False)
-
     # Lire la préférence allow_prerelease depuis prefs.json
-    prefs = _load_prefs()
+    prefs     = _load_prefs()
     allow_pre = prefs.get("allow_prerelease", False)
 
-    # Ignorer les pré-releases si l'utilisateur ne les a pas activées
-    if is_prerelease and not allow_pre:
+    data = _fetch_latest_release(allow_prerelease=allow_pre)
+    if data is None:
         if not silent:
-            root.after(0, lambda: _show_up_to_date(root, current_ver))
+            root.after(0, lambda: _show_up_to_date(root, config.APP_VERSION.strip()))
         return
+
+    latest_tag  = data.get("tag_name", "").lstrip("v")
+    current_ver = config.APP_VERSION.strip()
 
     if _parse_version(latest_tag) > _parse_version(current_ver):
         # Trouver l'asset installateur Windows
