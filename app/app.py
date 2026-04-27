@@ -3,6 +3,8 @@ Fenêtre principale de l'application Pynote — design refait.
 """
 
 import logging
+import sys
+import os
 import customtkinter as ctk
 
 import config
@@ -46,8 +48,32 @@ class PynoteApp(ctk.CTk):
         self.geometry("1050x680")
         self.minsize(800, 540)
         self.configure(fg_color=C["bg"])
+
+        # Icône de la fenêtre (barre de titre + barre des tâches)
+        _ico = self._find_icon()
+        if _ico:
+            try:
+                self.iconbitmap(_ico)
+            except Exception:
+                pass
+
         self._service = PronoteService()
         self._show_login()
+
+    @staticmethod
+    def _find_icon() -> str | None:
+        """Cherche assets/icon.ico — fonctionne en dev et dans le bundle PyInstaller."""
+        # Bundle PyInstaller (sys._MEIPASS) ou dossier courant
+        bases = []
+        if hasattr(sys, "_MEIPASS"):
+            bases.append(sys._MEIPASS)
+        bases.append(os.path.dirname(os.path.abspath(__file__)))
+        bases.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        for base in bases:
+            p = os.path.join(base, "assets", "icon.ico")
+            if os.path.exists(p):
+                return p
+        return None
 
     # ------------------------------------------------------------------
     # Connexion
