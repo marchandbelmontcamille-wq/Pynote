@@ -128,12 +128,13 @@ jobs:
           Write-Host "SHA-256 : $hash"
 
           # Ecrire les notes dans un fichier pour eviter les problemes de backticks PowerShell
+          $installerName = "${{ env.INSTALLER }}"
           $notesFile = "release_notes.md"
           @"
 ## Pynote $tag
 
 ### Installation (Windows)
-1. Telechargez ${{ env.INSTALLER }}
+1. Telechargez $installerName
 2. Double-cliquez et suivez le wizard
 3. Lancez Pynote depuis le Bureau ou le Menu Demarrer
 
@@ -141,7 +142,7 @@ jobs:
 
 ### Verification d integrite
 SHA-256 : $hash
-Verifier avec PowerShell : Get-FileHash ${{ env.INSTALLER }} -Algorithm SHA256
+Verifier avec PowerShell : Get-FileHash $installerName -Algorithm SHA256
 "@ | Out-File -FilePath $notesFile -Encoding utf8
 
           if ($pre) {
