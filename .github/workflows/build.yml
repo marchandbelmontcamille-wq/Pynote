@@ -1,0 +1,141 @@
+name: Build & Release Pynote
+
+on:
+  push:
+    tags:
+      - "v*"
+      - "0.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Detect build type
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ($tag -like "v*") {
+            "prod" | Out-File -FilePath build_type.txt -Encoding utf8
+            "IS_PRE=false" | Add-Content $env:GITHUB_ENV
+            "INSTALLER=Pynote-Setup-$tag.exe" | Add-Content $env:GITHUB_ENV
+          } else {
+            "dev" | Out-File -FilePath build_type.txt -Encoding utf8
+            "IS_PRE=true" | Add-Content $env:GITHUB_ENV
+            "INSTALLER=Pynote-Dev-Setup-$tag.exe" | Add-Content $env:GITHUB_ENV
+          }
+
+      - name: Build EXE
+        run: pyinstaller pynote.spec --noconfirm
+
+      - name: Generate self-signed certificate (PFX)
+        shell: pwsh
+        run: |
+          $cert = New-SelfSignedCertificate `
+            -Subject "CN=Pynote, O=marchandbelmontcamille-wq" `
+            -Type CodeSigningCert `
+            -CertStoreLocation "Cert:\CurrentUser\My" `
+            -NotAfter (Get-Date).AddYears(5) `
+            -HashAlgorithm SHA256
+          $pwd = ConvertTo-SecureString -String "pynote_tmp_sign" -Force -AsPlainText
+          Export-PfxCertificate -Cert $cert -FilePath ".\pynote_sign.pfx" -Password $pwd | Out-Null
+          Write-Host "Certificat genere : $($cert.Thumbprint)"
+
+      - name: Sign Pynote.exe
+        shell: pwsh
+        run: |
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" |
+            Where-Object { $_.FullName -match "x64" } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+          if (-not $signtool) { throw "signtool.exe introuvable" }
+          & $signtool sign /fd SHA256 /f ".\pynote_sign.pfx" /p "pynote_tmp_sign" `
+            /d "Pynote" /du "https://github.com/marchandbelmontcamille-wq/Pynote" `
+            "dist\Pynote\Pynote.exe"
+          if ($LASTEXITCODE -ne 0) { throw "Signature Pynote.exe echouee" }
+          Write-Host "Pynote.exe signe"
+
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup --yes --no-progress
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          $version = (Get-Content VERSION).Trim()
+          $basename = "${{ env.INSTALLER }}" -replace '\.exe$', ''
+          & $iscc /O"installer_output" /F"$basename" "/DMyAppVersion=$version" installer\pynote.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
+          Write-Host "Files in installer_output:"
+          Get-ChildItem installer_output
+
+      - name: Sign installer
+        shell: pwsh
+        run: |
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" |
+            Where-Object { $_.FullName -match "x64" } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+          if (-not $signtool) { throw "signtool.exe introuvable" }
+          $installer = "installer_output\${{ env.INSTALLER }}"
+          & $signtool sign /fd SHA256 /f ".\pynote_sign.pfx" /p "pynote_tmp_sign" `
+            /d "Pynote Installer" /du "https://github.com/marchandbelmontcamille-wq/Pynote" `
+            $installer
+          if ($LASTEXITCODE -ne 0) { throw "Signature installer echouee" }
+          Write-Host "Installer signe : $installer"
+          Remove-Item ".\pynote_sign.pfx" -Force
+
+      - name: Cleanup old releases and drafts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $releases = gh api "repos/${{ github.repository }}/releases" --paginate | ConvertFrom-Json
+          foreach ($r in $releases) {
+            if ($r.tag_name -eq $tag) {
+              Write-Host "Deleting release $($r.id)..."
+              gh api -X DELETE "repos/${{ github.repository }}/releases/$($r.id)"
+            }
+          }
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $installer = "installer_output\${{ env.INSTALLER }}"
+          $pre = if ("${{ env.IS_PRE }}" -eq "true") { "--prerelease" } else { "" }
+
+          # Calculer le hash SHA-256 de l'installateur
+          $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLower()
+          Write-Host "SHA-256 : $hash"
+
+          $nl = [System.Environment]::NewLine
+          $body = "## Pynote $tag$nl$nl"
+          $body += "### Installation (Windows)$nl"
+          $body += "1. Telechargez ${{ env.INSTALLER }}$nl"
+          $body += "2. Double-cliquez et suivez le wizard$nl"
+          $body += "3. Lancez Pynote depuis le Bureau ou le Menu Demarrer$nl$nl"
+          $body += "> Aucune installation de Python requise.$nl$nl"
+          $body += "### Verification d'integrite$nl"
+          $body += "SHA-256 : $hash$nl"
+          $body += "Verifier avec PowerShell : Get-FileHash ${{ env.INSTALLER }} -Algorithm SHA256"
+
+          gh release create $tag $installer --title "Pynote $tag" --notes $body $pre
