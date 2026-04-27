@@ -14,6 +14,7 @@ from app.views.edt_view import EdtView
 from app.views.devoirs_view import DevoirsView
 from app.views.notes_view import NotesView
 from app.views.absences_view import AbsencesView
+from app.views.settings_view import SettingsView
 
 logger = logging.getLogger("pynote.app")
 
@@ -42,6 +43,7 @@ NAV_ITEMS = [
     ("devoirs",  "📝",  "Devoirs"),
     ("notes",    "📊",  "Notes"),
     ("absences", "🚫",  "Absences"),
+    ("settings", "⚙️",  "Paramètres"),
 ]
 
 
@@ -116,12 +118,14 @@ class PynoteApp(ctk.CTk):
         devoirs_view  = DevoirsView(content, self._service)
         notes_view    = NotesView(content, self._service)
         absences_view = AbsencesView(content, self._service)
+        settings_view = SettingsView(content)
 
         self._views: dict[str, ctk.CTkFrame] = {
             "edt":      edt_view,
             "devoirs":  devoirs_view,
             "notes":    notes_view,
             "absences": absences_view,
+            "settings": settings_view,
         }
         for v in self._views.values():
             v.grid(row=0, column=0, sticky="nsew")
