@@ -1,5 +1,6 @@
 """
-Vue Absences — affiche les absences et retards du trimestre courant.
+Vue Absences — absences & retards par période (trimestre ou semestre).
+Chargement automatique au login, sélecteur de période.
 """
 
 import threading
@@ -41,11 +42,14 @@ def _date_fr(d) -> str:
 class AbsencesView(ctk.CTkFrame):
     def __init__(self, master, service: PronoteService) -> None:
         super().__init__(master, fg_color=C["bg"], corner_radius=0)
-        self._service = service
+        self._service    = service
+        self._periods    = []
+        self._period_idx = 0
+        self._period_var = ctk.StringVar(value="")
         self._build_ui()
 
     # ------------------------------------------------------------------
-    # UI
+    # Construction UI
     # ------------------------------------------------------------------
 
     def _build_ui(self) -> None:
@@ -55,7 +59,7 @@ class AbsencesView(ctk.CTkFrame):
         # ── En-tête ───────────────────────────────────────────────────
         header = ctk.CTkFrame(self, fg_color=C["card"], corner_radius=0, height=56)
         header.grid(row=0, column=0, sticky="ew")
-        header.grid_columnconfigure(0, weight=1)
+        header.grid_columnconfigure(1, weight=1)
         header.grid_propagate(False)
 
         ctk.CTkLabel(
@@ -65,38 +69,90 @@ class AbsencesView(ctk.CTkFrame):
             text_color=C["text"],
         ).grid(row=0, column=0, padx=24, sticky="w")
 
+        self._period_menu = ctk.CTkOptionMenu(
+            header,
+            variable=self._period_var,
+            values=["Chargement…"],
+            width=200, height=30,
+            font=ctk.CTkFont(size=11),
+            fg_color=C["border"],
+            button_color=C["accent"],
+            button_hover_color="#3a6fd8",
+            command=self._on_period_change,
+        )
+        self._period_menu.grid(row=0, column=1, padx=8)
+
         ctk.CTkButton(
             header,
-            text="↻  Actualiser",
-            width=110, height=30,
-            font=ctk.CTkFont(size=11),
+            text="↻",
+            width=36, height=30,
+            font=ctk.CTkFont(size=14),
             fg_color=C["accent"],
             hover_color="#3a6fd8",
             corner_radius=6,
-            command=self.refresh,
-        ).grid(row=0, column=1, padx=16)
+            command=self._reload_current,
+        ).grid(row=0, column=2, padx=(0, 16))
 
-        # ── Zone de défilement ────────────────────────────────────────
-        self._scroll = ctk.CTkScrollableFrame(
-            self, fg_color=C["bg"], corner_radius=0,
-        )
-        self._scroll.grid(row=1, column=0, sticky="nsew", padx=0, pady=0)
+        # ── Zone défilement ───────────────────────────────────────────
+        self._scroll = ctk.CTkScrollableFrame(self, fg_color=C["bg"], corner_radius=0)
+        self._scroll.grid(row=1, column=0, sticky="nsew")
         self._scroll.grid_columnconfigure(0, weight=1)
 
-        self._show_info("Cliquez sur ↻ Actualiser pour charger les absences.")
+        self._show_info("Chargement des absences…")
 
     # ------------------------------------------------------------------
     # Chargement
     # ------------------------------------------------------------------
 
     def refresh(self) -> None:
-        self._clear_cards()
-        self._show_info("Chargement…")
-        threading.Thread(target=self._load_thread, daemon=True).start()
+        self._show_info("Chargement des périodes…")
+        threading.Thread(target=self._load_periods_thread, daemon=True).start()
 
-    def _load_thread(self) -> None:
+    def _load_periods_thread(self) -> None:
         try:
-            absences = self._service.get_absences()
+            periods = self._service.get_periods()
+            current = self._service.get_current_period()
+            self.after(0, self._on_periods_loaded, periods, current)
+        except Exception as exc:
+            self.after(0, self._show_info, f"Erreur : {exc}", True)
+
+    def _on_periods_loaded(self, periods, current) -> None:
+        self._periods = periods
+        if not periods:
+            self._show_info("Aucune période disponible.")
+            return
+        names = [p.name for p in periods]
+        self._period_menu.configure(values=names)
+        idx = 0
+        if current:
+            for i, p in enumerate(periods):
+                if p.id == current.id or p.name == current.name:
+                    idx = i
+                    break
+        self._period_idx = idx
+        self._period_var.set(names[idx])
+        self._load_period(self._periods[idx])
+
+    def _on_period_change(self, name: str) -> None:
+        for i, p in enumerate(self._periods):
+            if p.name == name:
+                self._period_idx = i
+                self._load_period(p)
+                return
+
+    def _reload_current(self) -> None:
+        if self._periods:
+            self._load_period(self._periods[self._period_idx])
+        else:
+            self.refresh()
+
+    def _load_period(self, period) -> None:
+        self._show_info("Chargement…")
+        threading.Thread(target=self._load_data_thread, args=(period,), daemon=True).start()
+
+    def _load_data_thread(self, period) -> None:
+        try:
+            absences = self._service.get_absences(period)
             self.after(0, self._display_absences, absences)
         except Exception as exc:
             self.after(0, self._show_info, f"Erreur : {exc}", True)
@@ -108,19 +164,15 @@ class AbsencesView(ctk.CTkFrame):
     def _display_absences(self, absences: list) -> None:
         self._clear_cards()
         if not absences:
-            self._show_info("✅  Aucune absence enregistrée pour ce trimestre.")
+            self._show_info("✅  Aucune absence enregistrée pour cette période.")
             return
 
-        # Compteurs résumé
         nb_abs    = sum(1 for a in absences if not getattr(a, "is_delay", False))
         nb_retard = sum(1 for a in absences if getattr(a, "is_delay", False))
         summary = f"{len(absences)} entrée(s)  •  {nb_abs} absence(s)  •  {nb_retard} retard(s)"
         ctk.CTkLabel(
-            self._scroll,
-            text=summary,
-            font=ctk.CTkFont(size=11),
-            text_color=C["subtext"],
-            anchor="w",
+            self._scroll, text=summary,
+            font=ctk.CTkFont(size=11), text_color=C["subtext"], anchor="w",
         ).grid(row=0, column=0, sticky="w", padx=20, pady=(12, 6))
 
         for idx, a in enumerate(absences):
@@ -128,10 +180,9 @@ class AbsencesView(ctk.CTkFrame):
             card.grid(row=idx + 1, column=0, sticky="ew", padx=16, pady=3)
 
     def _make_absence_card(self, a) -> ctk.CTkFrame:
-        is_delay = getattr(a, "is_delay", False)
+        is_delay  = getattr(a, "is_delay",  False)
         justified = getattr(a, "justified", False)
 
-        # Couleur de la puce selon type
         if is_delay:
             badge_color = C["warning"]
             badge_text  = "RETARD"
@@ -143,27 +194,18 @@ class AbsencesView(ctk.CTkFrame):
             badge_text  = "ABSENCE"
 
         card = ctk.CTkFrame(
-            self._scroll,
-            fg_color=C["card"],
-            corner_radius=8,
-            border_width=1,
-            border_color=C["border"],
+            self._scroll, fg_color=C["card"], corner_radius=8,
+            border_width=1, border_color=C["border"],
         )
         card.grid_columnconfigure(1, weight=1)
 
-        # Badge type
         ctk.CTkLabel(
-            card,
-            text=badge_text,
+            card, text=badge_text,
             font=ctk.CTkFont(size=9, weight="bold"),
-            text_color="#0f1117",
-            fg_color=badge_color,
-            corner_radius=4,
-            width=72,
-            height=22,
+            text_color="#0f1117", fg_color=badge_color,
+            corner_radius=4, width=72, height=22,
         ).grid(row=0, column=0, rowspan=2, padx=(12, 10), pady=10)
 
-        # Dates
         from_dt = getattr(a, "from_date", None) or getattr(a, "start", None)
         to_dt   = getattr(a, "to_date",   None) or getattr(a, "end",   None)
         if from_dt and to_dt and _date_fr(from_dt) != _date_fr(to_dt):
@@ -174,16 +216,13 @@ class AbsencesView(ctk.CTkFrame):
             date_txt = "Date inconnue"
 
         ctk.CTkLabel(
-            card,
-            text=date_txt,
+            card, text=date_txt,
             font=ctk.CTkFont(size=11, weight="bold"),
-            text_color=C["text"],
-            anchor="w",
+            text_color=C["text"], anchor="w",
         ).grid(row=0, column=1, sticky="w", padx=4, pady=(10, 0))
 
-        # Raison / durée
-        reason   = getattr(a, "reason",    "") or ""
-        duration = getattr(a, "duration",  None)
+        reason   = getattr(a, "reason",   "") or ""
+        duration = getattr(a, "duration", None)
         meta_parts = []
         if duration is not None:
             try:
@@ -197,11 +236,8 @@ class AbsencesView(ctk.CTkFrame):
         meta = "  •  ".join(meta_parts) if meta_parts else "—"
 
         ctk.CTkLabel(
-            card,
-            text=meta,
-            font=ctk.CTkFont(size=10),
-            text_color=C["subtext"],
-            anchor="w",
+            card, text=meta,
+            font=ctk.CTkFont(size=10), text_color=C["subtext"], anchor="w",
         ).grid(row=1, column=1, sticky="w", padx=4, pady=(0, 10))
 
         return card
@@ -213,8 +249,7 @@ class AbsencesView(ctk.CTkFrame):
     def _show_info(self, msg: str, *, error: bool = False) -> None:
         self._clear_cards()
         ctk.CTkLabel(
-            self._scroll,
-            text=msg,
+            self._scroll, text=msg,
             font=ctk.CTkFont(size=13),
             text_color=C["danger"] if error else C["subtext"],
             wraplength=500,

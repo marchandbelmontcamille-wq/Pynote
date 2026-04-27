@@ -127,8 +127,11 @@ class PynoteApp(ctk.CTk):
             v.grid(row=0, column=0, sticky="nsew")
 
         self._switch_view("edt")
-        # Charger les devoirs après un court délai pour ne pas surcharger
-        self.after(2000, devoirs_view.refresh)
+        # Chargements automatiques échelonnés pour ne pas surcharger le serveur
+        self.after(500,  edt_view.refresh)
+        self.after(1500, devoirs_view.refresh)
+        self.after(3000, notes_view.refresh)
+        self.after(4500, absences_view.refresh)
 
     def _build_sidebar(self) -> ctk.CTkFrame:
         sb = ctk.CTkFrame(self, width=220, corner_radius=0, fg_color=C["sidebar"])
