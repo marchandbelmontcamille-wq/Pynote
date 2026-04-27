@@ -122,5 +122,27 @@ jobs:
           $tag = "${{ github.ref_name }}"
           $installer = "installer_output\${{ env.INSTALLER }}"
           $pre = if ("${{ env.IS_PRE }}" -eq "true") { "--prerelease" } else { "" }
-          $body = "## Pynote $tag`n`n### Installation (Windows)`n1. Telechargez **${{ env.INSTALLER }}**`n2. Double-cliquez et suivez le wizard`n3. Lancez Pynote depuis le Bureau ou le Menu Demarrer`n`n> Aucune installation de Python requise."
+
+          # Calculer le hash SHA-256 de l'installateur
+          $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLower()
+          Write-Host "SHA-256 : $hash"
+
+          $body = @"
+## Pynote $tag
+
+### Installation (Windows)
+1. Telechargez **${{ env.INSTALLER }}**
+2. Double-cliquez et suivez le wizard
+3. Lancez Pynote depuis le Bureau ou le Menu Demarrer
+
+> Aucune installation de Python requise.
+
+### Verification d'integrite
+Verifiez que le SHA-256 de l'installateur correspond avant de l'executer :
+``````
+$hash  ${{ env.INSTALLER }}
+``````
+Sur PowerShell : ``Get-FileHash Pynote-Dev-Setup-$tag.exe -Algorithm SHA256``
+"@
+
           gh release create $tag $installer --title "Pynote $tag" --notes $body $pre
