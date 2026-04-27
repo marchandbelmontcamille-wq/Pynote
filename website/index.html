@@ -7,7 +7,6 @@
   <meta name="description" content="Pynote est un client Pronote local et gratuit pour Windows. Consultez votre EDT, vos devoirs, notes et absences depuis une interface moderne." />
   <meta property="og:title" content="Pynote — Client Pronote pour Windows" />
   <meta property="og:description" content="Client Pronote local, gratuit, open-source. EDT, devoirs, notes, absences." />
-  <meta property="og:image" content="assets/og.png" />
   <link rel="icon" href="assets/icon.ico" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -17,8 +16,8 @@
   <nav>
     <div class="nav-inner">
       <a class="nav-logo" href="#">
-        <img src="assets/icon.ico" alt="Pynote icon" width="28" height="28" />
-        <span>Pynote</span>
+        <img src="assets/icon.ico" alt="Pynote" width="26" height="26" />
+        Pynote
       </a>
       <div class="nav-links">
         <a href="#features">Fonctionnalités</a>
@@ -26,7 +25,7 @@
         <a href="https://github.com/marchandbelmontcamille-wq/Pynote" target="_blank" rel="noopener">GitHub</a>
       </div>
       <a class="btn btn-primary nav-cta" id="nav-download" href="https://github.com/marchandbelmontcamille-wq/Pynote/releases/latest" target="_blank" rel="noopener">
-        ⬇ Télécharger
+        ⬇&nbsp; Télécharger
       </a>
     </div>
   </nav>
@@ -34,7 +33,7 @@
   <!-- ── HERO ────────────────────────────────────────────────────── -->
   <header class="hero">
     <div class="hero-inner">
-      <div class="badge">✨ Open-source · Gratuit · Windows</div>
+      <div class="badge">✦ Open-source &nbsp;·&nbsp; Gratuit &nbsp;·&nbsp; Windows</div>
       <h1>Ton Pronote,<br /><span class="gradient">sans le navigateur.</span></h1>
       <p class="hero-sub">
         Pynote est un client de bureau léger pour Pronote.<br />
@@ -42,20 +41,35 @@
       </p>
       <div class="hero-btns">
         <a class="btn btn-primary btn-lg" id="hero-download" href="https://github.com/marchandbelmontcamille-wq/Pynote/releases/latest" target="_blank" rel="noopener">
-          ⬇ Télécharger Pynote &nbsp;<span class="version-badge" id="version-badge">…</span>
+          ⬇&nbsp; Télécharger Pynote &nbsp;<span class="version-badge" id="version-badge">…</span>
         </a>
         <a class="btn btn-ghost btn-lg" href="https://github.com/marchandbelmontcamille-wq/Pynote" target="_blank" rel="noopener">
-          ⭐ GitHub
+          ⭐&nbsp; GitHub
         </a>
       </div>
-      <p class="hero-hint">Windows 10/11 · Aucune installation de Python requise</p>
+      <p class="hero-hint">Windows 10 / 11 &nbsp;·&nbsp; Aucune installation de Python requise</p>
+
+      <div class="stats-bar">
+        <div class="stat">
+          <div class="stat-value">0</div>
+          <div class="stat-label">Données envoyées</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">MIT</div>
+          <div class="stat-label">Licence libre</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">100%</div>
+          <div class="stat-label">Gratuit</div>
+        </div>
+      </div>
     </div>
-    <div class="hero-glow"></div>
   </header>
 
   <!-- ── FEATURES ────────────────────────────────────────────────── -->
   <section class="features" id="features">
     <div class="section-inner">
+      <div class="section-label">Fonctionnalités</div>
       <h2>Tout ce dont tu as besoin</h2>
       <p class="section-sub">Les données de ton établissement, à portée de clic.</p>
       <div class="cards">
@@ -63,37 +77,37 @@
         <div class="card">
           <div class="card-icon">📅</div>
           <h3>Emploi du temps</h3>
-          <p>Grille hebdomadaire interactive avec heures actuelles, navigation semaine par semaine.</p>
+          <p>Grille hebdomadaire interactive avec heures actuelles et navigation semaine par semaine.</p>
         </div>
 
         <div class="card">
           <div class="card-icon">📝</div>
           <h3>Devoirs</h3>
-          <p>Liste des travaux à rendre, triés par date, avec matière et description.</p>
+          <p>Liste des travaux à rendre triés par date, avec matière et description détaillée.</p>
         </div>
 
         <div class="card">
           <div class="card-icon">📊</div>
           <h3>Notes</h3>
-          <p>Notes par matière avec moyenne élève et classe calculées par l'établissement. Sélecteur trimestre / semestre.</p>
+          <p>Notes par matière avec moyenne élève et classe. Sélecteur trimestre / semestre.</p>
         </div>
 
         <div class="card">
           <div class="card-icon">🚫</div>
           <h3>Absences</h3>
-          <p>Absences et retards par période, avec statut justifié / non justifié.</p>
+          <p>Absences et retards par période, avec statut justifié / non justifié et durée.</p>
         </div>
 
         <div class="card">
           <div class="card-icon">🔄</div>
           <h3>Auto-update</h3>
-          <p>Vérification automatique des nouvelles versions. Mise à jour en un clic depuis l'application.</p>
+          <p>Vérification automatique des nouvelles versions au démarrage. Mise à jour en un clic.</p>
         </div>
 
         <div class="card">
           <div class="card-icon">🔒</div>
-          <h3>Session persistante</h3>
-          <p>Connexion automatique au démarrage. Ton mot de passe ne quitte jamais ta machine.</p>
+          <h3>Données locales</h3>
+          <p>Session persistante sans serveur tiers. Ton mot de passe ne quitte jamais ta machine.</p>
         </div>
 
       </div>
@@ -103,6 +117,7 @@
   <!-- ── INSTALL ──────────────────────────────────────────────────── -->
   <section class="install" id="install">
     <div class="section-inner">
+      <div class="section-label">Guide</div>
       <h2>Installation en 3 étapes</h2>
       <p class="section-sub">Aucune connaissance technique requise.</p>
       <ol class="steps">
@@ -110,7 +125,7 @@
           <span class="step-num">1</span>
           <div>
             <strong>Télécharge l'installateur</strong>
-            <p>Clique sur le bouton "Télécharger" et récupère <code>Pynote-Setup-*.exe</code>.</p>
+            <p>Clique sur le bouton "Télécharger" et récupère <code>Pynote-Setup-*.exe</code> depuis les releases GitHub.</p>
           </div>
         </li>
         <li>
@@ -129,13 +144,24 @@
         </li>
       </ol>
       <a class="btn btn-primary btn-lg" id="install-download" href="https://github.com/marchandbelmontcamille-wq/Pynote/releases/latest" target="_blank" rel="noopener">
-        ⬇ Télécharger maintenant
+        ⬇&nbsp; Télécharger maintenant
+      </a>
+    </div>
+  </section>
+
+  <!-- ── CTA ─────────────────────────────────────────────────────── -->
+  <section class="cta-section">
+    <div class="cta-inner">
+      <h2>Prêt à simplifier<br />ton quotidien scolaire ?</h2>
+      <p>Gratuit, open-source, sans compte requis. Juste ton Pronote, dans une interface propre.</p>
+      <a class="btn btn-primary btn-lg" id="cta-download" href="https://github.com/marchandbelmontcamille-wq/Pynote/releases/latest" target="_blank" rel="noopener">
+        ⬇&nbsp; Télécharger Pynote gratuitement
       </a>
     </div>
   </section>
 
   <!-- ── LEGAL ───────────────────────────────────────────────────── -->
-  <section class="legal-strip">
+  <div class="legal-strip">
     <div class="section-inner">
       <p>
         Pynote est un projet indépendant, non affilié à Index Éducation ni à Pronote®.<br />
@@ -143,14 +169,14 @@
         Les données scolaires restent exclusivement sur votre appareil.
       </p>
     </div>
-  </section>
+  </div>
 
   <!-- ── FOOTER ──────────────────────────────────────────────────── -->
   <footer>
     <div class="footer-inner">
       <div class="footer-logo">
-        <img src="assets/icon.ico" alt="Pynote" width="22" height="22" />
-        <span>Pynote</span>
+        <img src="assets/icon.ico" alt="Pynote" width="20" height="20" />
+        Pynote
       </div>
       <div class="footer-links">
         <a href="https://github.com/marchandbelmontcamille-wq/Pynote" target="_blank" rel="noopener">GitHub</a>

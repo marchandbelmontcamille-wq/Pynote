@@ -2,6 +2,7 @@
 Module d'auto-update pour Pynote.
 Vérifie les nouvelles releases sur GitHub et propose le téléchargement.
 Fonctionne uniquement dans le bundle PyInstaller (pas en mode script).
+Respecte la préférence allow_prerelease de prefs.json.
 """
 
 import sys
@@ -15,6 +16,19 @@ import json
 
 import customtkinter as ctk
 import config
+
+_PREFS_FILE = os.path.join(
+    os.environ.get("APPDATA", os.path.expanduser("~")),
+    "Pynote", "prefs.json"
+)
+
+
+def _load_prefs() -> dict:
+    try:
+        with open(_PREFS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
 
 logger = logging.getLogger("pynote.updater")
 
@@ -83,12 +97,16 @@ def _check_thread(root: ctk.CTk, silent: bool) -> None:
             root.after(0, lambda: _show_error(root, "Impossible de contacter GitHub."))
         return
 
-    latest_tag  = data.get("tag_name", "").lstrip("v")
-    current_ver = config.APP_VERSION.strip()
+    latest_tag    = data.get("tag_name", "").lstrip("v")
+    current_ver   = config.APP_VERSION.strip()
     is_prerelease = data.get("prerelease", False)
 
-    # Si on est en prod, ignorer les pré-releases
-    if config.IS_DEV is False and is_prerelease:
+    # Lire la préférence allow_prerelease depuis prefs.json
+    prefs = _load_prefs()
+    allow_pre = prefs.get("allow_prerelease", False)
+
+    # Ignorer les pré-releases si l'utilisateur ne les a pas activées
+    if is_prerelease and not allow_pre:
         if not silent:
             root.after(0, lambda: _show_up_to_date(root, current_ver))
         return

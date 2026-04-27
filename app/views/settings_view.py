@@ -110,6 +110,13 @@ class SettingsView(ctk.CTkFrame):
             widget_fn=self._make_update_widget,
         )
 
+        row = self._setting_row(
+            scroll, row,
+            label="Recevoir les pré-releases",
+            desc="Inclure les versions de développement (0.x.x) dans les mises à jour",
+            widget_fn=self._make_prerelease_widget,
+        )
+
         # ── Section : À propos ────────────────────────────────────────
         row = self._section(scroll, "ℹ️  À propos", row)
 
@@ -142,6 +149,29 @@ class SettingsView(ctk.CTkFrame):
             command=on_change,
         )
         menu.pack()
+        return frame
+
+    def _make_prerelease_widget(self, parent) -> ctk.CTkFrame:
+        frame = ctk.CTkFrame(parent, fg_color="transparent")
+        current = self._prefs.get("allow_prerelease", False)
+        var = ctk.BooleanVar(value=current)
+
+        def on_toggle() -> None:
+            self._prefs["allow_prerelease"] = var.get()
+            _save_prefs(self._prefs)
+            self._show_saved_toast()
+
+        switch = ctk.CTkSwitch(
+            frame,
+            text="",
+            variable=var,
+            onvalue=True,
+            offvalue=False,
+            width=46,
+            progress_color=C["accent"],
+            command=on_toggle,
+        )
+        switch.pack()
         return frame
 
     def _make_update_widget(self, parent) -> ctk.CTkFrame:
