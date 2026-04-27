@@ -1,13 +1,40 @@
 """
 Vue Notes — notes + moyennes par période (trimestre ou semestre).
 Chargement automatique au login, sélecteur de période, moyennes établissement.
+Popup de première connexion pour demander le type de période.
 """
 
+import json
+import os
 import threading
 import logging
 import customtkinter as ctk
 
 from app.pronote_service import PronoteService
+from app.dialogs import PeriodTypeDialog
+
+# Fichier de préférences utilisateur
+_PREFS_FILE = os.path.join(
+    os.environ.get("APPDATA", os.path.expanduser("~")),
+    "Pynote", "prefs.json"
+)
+
+
+def _load_prefs() -> dict:
+    try:
+        with open(_PREFS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _save_prefs(prefs: dict) -> None:
+    try:
+        os.makedirs(os.path.dirname(_PREFS_FILE), exist_ok=True)
+        with open(_PREFS_FILE, "w", encoding="utf-8") as f:
+            json.dump(prefs, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
 
 logger = logging.getLogger("pynote.notes")
 
@@ -65,10 +92,11 @@ def _fmt_avg(val) -> str:
 class NotesView(ctk.CTkFrame):
     def __init__(self, master, service: PronoteService) -> None:
         super().__init__(master, fg_color=C["bg"], corner_radius=0)
-        self._service   = service
-        self._periods   = []          # liste des Period
-        self._period_idx = 0          # index courant
+        self._service    = service
+        self._periods    = []
+        self._period_idx = 0
         self._period_var = ctk.StringVar(value="")
+        self._prefs      = _load_prefs()   # {"period_type": "trimestre"|"semestre"}
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -145,7 +173,23 @@ class NotesView(ctk.CTkFrame):
     # ------------------------------------------------------------------
 
     def refresh(self) -> None:
-        """Appelé au login (auto) ou sur ↻."""
+        """Appelé au login (auto) ou sur ↻.
+        Affiche d'abord le dialog si le type de période n'est pas encore connu."""
+        if "period_type" not in self._prefs:
+            # Attendre que la fenêtre soit prête avant d'ouvrir le dialog
+            self.after(200, self._ask_period_type)
+        else:
+            self._show_info("Chargement des périodes…")
+            threading.Thread(target=self._load_periods_thread, daemon=True).start()
+
+    def _ask_period_type(self) -> None:
+        """Affiche la popup modale trimestre / semestre."""
+        dlg = PeriodTypeDialog(self.winfo_toplevel())
+        self.wait_window(dlg)
+        if dlg.result:
+            self._prefs["period_type"] = dlg.result
+            _save_prefs(self._prefs)
+        # Charger dans tous les cas (l'utilisateur a peut-être fermé sans choisir)
         self._show_info("Chargement des périodes…")
         threading.Thread(target=self._load_periods_thread, daemon=True).start()
 
