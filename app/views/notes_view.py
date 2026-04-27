@@ -202,18 +202,28 @@ class NotesView(ctk.CTkFrame):
             self.after(0, self._show_info, f"Erreur : {exc}", True)
 
     def _on_periods_loaded(self, periods, current) -> None:
-        self._periods = periods
         if not periods:
             self._show_info("Aucune période disponible.")
             return
 
-        names = [p.name for p in periods]
+        # Filtrer selon le choix trimestre/semestre
+        ptype = self._prefs.get("period_type", "")
+        if ptype == "trimestre":
+            filtered = [p for p in periods if "semestre" not in p.name.lower()]
+        elif ptype == "semestre":
+            filtered = [p for p in periods if "trimestre" not in p.name.lower()]
+        else:
+            filtered = periods
+
+        self._periods = filtered if filtered else periods
+
+        names = [p.name for p in self._periods]
         self._period_menu.configure(values=names)
 
         # Sélectionner la période courante par défaut
         idx = 0
         if current:
-            for i, p in enumerate(periods):
+            for i, p in enumerate(self._periods):
                 if p.id == current.id or p.name == current.name:
                     idx = i
                     break

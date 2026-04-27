@@ -1,13 +1,29 @@
 """
 Vue Absences — absences & retards par période (trimestre ou semestre).
 Chargement automatique au login, sélecteur de période.
+Filtre les périodes selon la préférence trimestre/semestre sauvegardée.
 """
 
+import json
+import os
 import threading
 import logging
 import customtkinter as ctk
 
 from app.pronote_service import PronoteService
+
+_PREFS_FILE = os.path.join(
+    os.environ.get("APPDATA", os.path.expanduser("~")),
+    "Pynote", "prefs.json"
+)
+
+
+def _load_prefs() -> dict:
+    try:
+        with open(_PREFS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
 
 logger = logging.getLogger("pynote.absences")
 
@@ -46,6 +62,7 @@ class AbsencesView(ctk.CTkFrame):
         self._periods    = []
         self._period_idx = 0
         self._period_var = ctk.StringVar(value="")
+        self._prefs      = _load_prefs()
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -117,15 +134,26 @@ class AbsencesView(ctk.CTkFrame):
             self.after(0, self._show_info, f"Erreur : {exc}", True)
 
     def _on_periods_loaded(self, periods, current) -> None:
-        self._periods = periods
         if not periods:
             self._show_info("Aucune période disponible.")
             return
-        names = [p.name for p in periods]
+
+        # Filtrer selon le choix trimestre/semestre
+        ptype = self._prefs.get("period_type", "")
+        if ptype == "trimestre":
+            filtered = [p for p in periods if "semestre" not in p.name.lower()]
+        elif ptype == "semestre":
+            filtered = [p for p in periods if "trimestre" not in p.name.lower()]
+        else:
+            filtered = periods
+
+        self._periods = filtered if filtered else periods
+
+        names = [p.name for p in self._periods]
         self._period_menu.configure(values=names)
         idx = 0
         if current:
-            for i, p in enumerate(periods):
+            for i, p in enumerate(self._periods):
                 if p.id == current.id or p.name == current.name:
                     idx = i
                     break
