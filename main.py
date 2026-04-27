@@ -8,12 +8,7 @@ import os
 
 
 def _set_appid() -> None:
-    """Force Windows à utiliser l'icône de Pynote dans la barre des tâches.
-
-    Sans cet appel, la taskbar affiche l'icône de python.exe (ou du launcher).
-    Le SetCurrentProcessExplicitAppUserModelID doit être appelé AVANT la
-    création de toute fenêtre Tk/CTk.
-    """
+    """Force Windows à utiliser l'icône de Pynote dans la barre des tâches."""
     if sys.platform != "win32":
         return
     try:
@@ -27,8 +22,19 @@ def _set_appid() -> None:
 
 def main() -> None:
     _set_appid()
+
     from app.app import PynoteApp
+    from app.error_handler import install_global_handler
+    from app.updater import check_for_updates
+
     app = PynoteApp()
+
+    # Gestionnaire d'erreurs global
+    install_global_handler(app)
+
+    # Vérification silencieuse des mises à jour au démarrage (5s de délai)
+    app.after(5000, lambda: check_for_updates(app, silent=True))
+
     app.mainloop()
 
 

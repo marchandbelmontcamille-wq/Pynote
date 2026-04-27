@@ -100,6 +100,16 @@ class SettingsView(ctk.CTkFrame):
             widget_fn=self._make_theme_widget,
         )
 
+        # ── Section : Mises à jour ────────────────────────────────────
+        row = self._section(scroll, "🔄  Mises à jour", row)
+
+        row = self._setting_row(
+            scroll, row,
+            label="Vérifier les mises à jour",
+            desc="Vérifie si une nouvelle version de Pynote est disponible",
+            widget_fn=self._make_update_widget,
+        )
+
         # ── Section : À propos ────────────────────────────────────────
         row = self._section(scroll, "ℹ️  À propos", row)
 
@@ -132,6 +142,26 @@ class SettingsView(ctk.CTkFrame):
             command=on_change,
         )
         menu.pack()
+        return frame
+
+    def _make_update_widget(self, parent) -> ctk.CTkFrame:
+        frame = ctk.CTkFrame(parent, fg_color="transparent")
+        from app.updater import check_for_updates
+
+        def on_check() -> None:
+            root = self.winfo_toplevel()
+            check_for_updates(root, silent=False)
+
+        ctk.CTkButton(
+            frame,
+            text="🔄  Vérifier",
+            width=130, height=32,
+            font=ctk.CTkFont(size=11),
+            fg_color=C["accent"],
+            hover_color="#3a6fd8",
+            corner_radius=6,
+            command=on_check,
+        ).pack()
         return frame
 
     def _make_theme_widget(self, parent) -> ctk.CTkFrame:
