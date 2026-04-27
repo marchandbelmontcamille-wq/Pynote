@@ -20,14 +20,13 @@ async function loadLatestRelease() {
     const badge = document.getElementById("version-badge");
     if (badge) badge.textContent = ver || "latest";
 
-    // Trouver l'asset .exe Windows
-    const asset = (data.assets || []).find(a => a.name && a.name.endsWith(".exe"));
-    const dlUrl = asset ? asset.browser_download_url : data.html_url;
+    // Pointer vers la page de la release (pas téléchargement direct)
+    const releaseUrl = data.html_url || `https://github.com/marchandbelmontcamille-wq/Pynote/releases/tag/${data.tag_name}`;
 
     // Mettre à jour tous les boutons de téléchargement
-    ["nav-download", "hero-download", "install-download"].forEach(id => {
+    ["nav-download", "hero-download", "install-download", "cta-download"].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.href = dlUrl;
+      if (el) el.href = releaseUrl;
     });
 
   } catch (e) {
